@@ -158,7 +158,7 @@ main.four .now .hin{font-size:1.5rem}main.four .now .count b{font-size:3.2rem}
 .jr .t{font-weight:900}
 .jr .rem{font-size:.85rem;white-space:nowrap}
 .jr .bt{display:flex;gap:.3rem}
-.tg{display:inline-block;font-size:.72rem;font-weight:800;border-radius:.3rem;padding:0 .35rem;margin-right:.3rem;vertical-align:middle}.tg.pz{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}.tg.on1{background:#ede9fe;color:#5b21b6;border:1px solid #8b5cf6}
+.tg{display:inline-block;font-size:.72rem;font-weight:800;border-radius:.3rem;padding:0 .35rem;margin-right:.3rem;vertical-align:middle}.tg.pz{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}.tg.on1{background:#ede9fe;color:#5b21b6;border:1px solid #8b5cf6}.tg.rb{background:#fee2e2;color:#991b1b;border:1px solid #ef4444}
 .btn.pause{background:#f59e0b;color:#111}
 #kensaBody .job.jr{cursor:pointer}.jr .go{font-size:1.3rem;font-weight:900;color:var(--mut);text-align:center}
 .ib{font-size:4.5rem;font-weight:900;line-height:1;color:var(--kensa);text-align:center}.ib small{font-size:1.6rem}
@@ -248,7 +248,7 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-10b</span>
+    <span class="ver">ver 2026-11-10c</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -285,7 +285,7 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-10b';
+const VER='2026-11-10c';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -556,12 +556,12 @@ function renderDan2(){
   if(!showDan2()||view!=='main')return;
   const ALL=Object.values(jobs).filter(j=>stg(j)===2&&j.st==='wait').sort((a,b)=>a.t1-b.t1),q2=qv('q2'),L=ALL.filter(j=>hitQ(j,q2));
   $('#dan2Body').innerHTML=`<h2>届いた順（${q2?L.length+'件／全'+ALL.length:L.length}件）<span class="hint">準備OKで${esc(SN(3))}へ。箱数を押すと変更できます</span></h2>`+(L.length?`<div class="jlist"><div class="jr d2 hd"><span>No</span><span>品番・背番</span><span style="text-align:right">箱数</span><span class="tm">送信</span><span>到着</span><span></span></div>`+L.map(j=>`<div class="jr d2" data-id="${esc(j.id)}" title="${esc(j.tab)}">
-    <span class="no">${ALL.indexOf(j)+1}</span><span class="h">${esc(j.hin)}</span><button class="bxb" data-ed="dan2">${fn(j.n)}箱${r2(j.n)!==r2(j.qty)&&j.qty!=null?` <small>/${fn(j.qty)}</small>`:''}</button><span class="tm">${hm(j.t1)}</span><span class="t">${hm(j.eta)}</span>
+    <span class="no">${ALL.indexOf(j)+1}</span><span class="h">${j.rb?'<span class="tg rb">戻り</span>':''}${esc(j.hin)}</span><button class="bxb" data-ed="dan2">${fn(j.n)}箱${r2(j.n)!==r2(j.qty)&&j.qty!=null?` <small>/${fn(j.qty)}</small>`:''}</button><span class="tm">${hm(j.t1)}</span><span class="t">${hm(j.eta)}</span>
     <span class="bt"><button class="btn ok" data-adv="1">準備OK</button></span></div>`).join('')+'</div>':(q2&&ALL.length?'<div class="empty">「'+esc(q2)+'」に当てはまる品番はありません</div>':'<div class="empty">いま届いているものはありません</div>'));
 }
 function advance(id){
   const j=jobs[id];if(!j)return;const prev=JSON.parse(JSON.stringify(j));
-  j.stage=3;j.st='wait';j.tab2=S.name;j.ta2=Date.now();j.n2=+j.n;upsert(j);
+  j.stage=3;j.st='wait';j.tab2=S.name;j.ta2=Date.now();j.n2=+j.n;j.rb=0;upsert(j);
   toast(j.hin+' を'+SN(3)+'へ進めました',()=>{prev.u=Date.now();jobs[prev.id]=prev;upsert(prev)});
 }
 
@@ -613,7 +613,8 @@ function drawInsp(){
       <div class="fx"><button class="btn ghost" data-fv="-1">−1</button><input id="iVal" type="number" min="0" step="1" inputmode="numeric" value="${insp.val}"><button class="btn ghost" data-fv="1">+1</button></div>
       <input id="iMemo" placeholder="コメント（例：数え直し、箱の入れ違い など）" value="${esc(insp.memo||'')}" style="width:100%;margin-top:.6rem;font-size:1.2rem">
       <div class="foot"><button class="btn ghost" id="hCan">やめる</button><button class="btn red" id="hOk">反映する</button></div></div>`:''}
-    <div class="foot"><button class="btn pause" id="iPause" ${r>0?'':'disabled'}>一時中断（あとで続ける）</button><button class="btn ghost" data-close>とじる</button></div>`;
+    <div class="foot">${j.only?'':`<button class="btn ghost" id="iBack" ${+j.ins>0?'disabled title="検査を始めた品番は戻せません"':''}>${esc(SN(2))}へ戻す</button>`}<button class="btn pause" id="iPause" ${r>0?'':'disabled'}>一時中断（あとで続ける）</button><button class="btn ghost" data-close>とじる</button></div>`;
+  if($('#iBack'))$('#iBack').onclick=()=>openBack(j.id);
   $('#iPause').onclick=()=>{const now=Date.now();if(insp.si!=null&&j.ses&&j.ses[insp.si])j.ses[insp.si][1]=now;j.pz=now;j.paus=(j.paus||[]).concat([[now,S.name]]);closeModal();upsert(j);toast(j.hin+'：一時中断（のこり '+fn(r)+'箱）')};
   /* 時間はクルクル（ホイール）で設定。処理した箱数を入れて登録 → のこりが減る */
   box.querySelectorAll('.wh').forEach(w=>{const k=w.dataset.k,max=k.endsWith('H')?23:59;
@@ -654,6 +655,30 @@ function drawInsp(){
       insp.hand=false;insp.memo='';if(inspDo(j=>{j.n=(+j.n||0)+d;j.adj=(j.adj||[]).concat([[Date.now(),d,'ハンド入力',memo,S.name]])}))return;toast(j.hin+'：ハンド入力 '+(d>0?'+':'')+d+'箱'+(memo?'（'+memo+'）':'')+'　記録しました')};
   }
 
+}
+/* 前工程へ戻す：箱数をまちがえたとき、正しい箱数に直して検査用段取りへ戻し、準備をやり直してもらう。
+   検査を1箱でも登録した品番は戻せない。戻した記録は bk に残す [時刻,戻す前の箱数,戻した箱数,理由,タブレット] */
+function openBack(id){
+  const j=jobs[id];if(!j)return;
+  openModal(`<h3>${esc(SN(2))}へ戻す</h3><div class="big">${esc(j.hin)}</div>
+    <div style="color:var(--mut)">送信時 ${fn(j.qty??j.n)}箱　／　いま ${fn(j.n)}箱</div>
+    <label style="display:block;margin-top:.6rem">正しい箱数（かんばん枚数）</label>
+    <input id="bIn" type="number" min="1" step="1" inputmode="numeric" value="${r2(j.n)}">
+    <div class="qbtn">${[-1,1].map(d=>`<button class="btn ghost" data-q="${d}">${d>0?'+':'−'}${Math.abs(d)}</button>`).join('')}</div>
+    <input id="bMemo" placeholder="理由（例：箱数のまちがい）" value="箱数のまちがい" style="width:100%;margin-top:.6rem;font-size:1.2rem">
+    <div class="foot"><button class="btn ghost" data-close>もどる</button><button class="btn red" id="bOk">${esc(SN(2))}へ戻す</button></div>`,()=>{
+    document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{$('#bIn').value=Math.max(1,r2((+$('#bIn').value||0)+(+b.dataset.q)))});
+    $('#bOk').onclick=()=>{
+      const v=+$('#bIn').value,memo=($('#bMemo').value||'').trim();
+      if($('#bIn').value===''||!Number.isInteger(v)||v<1){alert('1以上の整数を入れてください');return}
+      if(+j.ins>0){alert('検査を始めた品番は戻せません');return}
+      const prev=JSON.parse(JSON.stringify(j)),old=r2(j.n);
+      j.bk=(j.bk||[]).concat([[Date.now(),old,v,memo,S.name]]);
+      Object.assign(j,{n:v,stage:2,st:'wait',rb:1,pz:null});
+      closeModal();upsert(j);
+      toast(j.hin+' を'+SN(2)+'へ戻しました（'+(v!==old?fn(old)+'→':'')+fn(v)+'箱）',()=>{prev.u=Date.now();jobs[prev.id]=prev;upsert(prev)});
+    };
+  });
 }
 /* 検査のみ入力（突発で検査だけ入るとき）：品番・背番と数量だけ */
 function openOnly(){
@@ -838,6 +863,7 @@ function jissekiSheet(date,rows,andons){
     const b3=(j.ses&&j.ses.length)?[j.tab3||'',j.hin+(j.only?'（検査のみ）':''),n3,rng(j.ses[0][0],j.ses[j.ses.length-1][1]),perBox(ms,n3)]:(j.only?[j.tab0||'',j.hin+'（検査のみ）','','','']:E5);
     const ev=[];(j.adj||[]).forEach(x=>ev.push([x[0],x[4]||j.tab3||'',x[2]+' '+(x[1]>0?'+':'')+x[1]+(x[3]?'（'+x[3]+'）':'')]));
     (j.paus||[]).forEach(p=>ev.push([p[0],p[1],'一時中断']));
+    (j.bk||[]).forEach(b=>ev.push([b[0],b[4]||'',SN(2)+'へ戻す '+b[1]+'→'+b[2]+'箱'+(b[3]?'（'+b[3]+'）':'')]));
     if(j.only)ev.push([j.tp,j.tab0||'','検査のみ入力 '+n1+'箱']);
     ev.sort((x,y)=>x[0]-y[0]);
     const dsum=(j.adj||[]).reduce((t,x)=>t+x[1],0);

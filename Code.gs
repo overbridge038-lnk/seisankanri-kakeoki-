@@ -1,5 +1,5 @@
 /**
- * 生産管理しくみ  データ置き場（Googleスプレッドシート＋Apps Script） ver 2026-11-10b
+ * 生産管理しくみ  データ置き場（Googleスプレッドシート＋Apps Script） ver 2026-11-10c
  *
  * 【設置手順】
  * 1. 会社のGoogleアカウントで新しいスプレッドシートを作る
@@ -51,7 +51,7 @@ function jobToRow_(j){
   return [String(j.id), ymd_(j.t1 || j.tp), j.tab || '', String(j.hin), String(j.sei || ''), j.n || 0, j.nq || 0,
     hm_(j.t0), hm_(j.t1), j.t1 ? Math.round((j.t1 - j.t0) / 6000) / 10 : '', hm_(j.eta), ST_OUT[j.st] || j.st, hm_(j.tr), hm_(j.td),
     j.t0 || '', j.t1 || '', j.eta || '', j.tr || '', j.td || '', j.u, JSON.stringify(j.kb || []),
-    j.stage == null ? 3 : j.stage, j.maker || '', j.qty == null ? '' : j.qty, j.tp || '', j.ins || 0, JSON.stringify(j.adj || []), JSON.stringify({tab2: j.tab2 || '', ta2: j.ta2 || null, tab3: j.tab3 || '', ses: j.ses || [], n2: j.n2 == null ? null : j.n2, only: j.only || 0, tab0: j.tab0 || '', pz: j.pz || null, paus: j.paus || [], ord: j.ord == null ? null : j.ord})];
+    j.stage == null ? 3 : j.stage, j.maker || '', j.qty == null ? '' : j.qty, j.tp || '', j.ins || 0, JSON.stringify(j.adj || []), JSON.stringify({tab2: j.tab2 || '', ta2: j.ta2 || null, tab3: j.tab3 || '', ses: j.ses || [], n2: j.n2 == null ? null : j.n2, only: j.only || 0, tab0: j.tab0 || '', pz: j.pz || null, paus: j.paus || [], ord: j.ord == null ? null : j.ord, bk: j.bk || [], rb: j.rb || 0})];
 }
 function rowToJob_(r){
   var o = {id:String(r[0]), tab:r[2], hin:String(r[3]), sei:String(r[4]), n:r[5], nq:r[6], st:ST_IN[r[11]] || 'wait',
@@ -59,6 +59,7 @@ function rowToJob_(r){
     stage:r[21] === '' ? 3 : r[21], maker:String(r[22] || ''), qty:r[23] === '' ? null : r[23], tp:r[24] || null, ins:Number(r[25]) || 0, adj:safeParse_(r[26])};
   var x = {}; try { x = JSON.parse(r[27]) || {}; } catch (e) {}
   o.tab2 = x.tab2 || ''; o.ta2 = x.ta2 || null; o.tab3 = x.tab3 || ''; o.ses = x.ses || []; o.n2 = x.n2 == null ? null : x.n2; o.only = x.only || 0; o.tab0 = x.tab0 || ''; o.pz = x.pz || null; o.paus = x.paus || []; if (x.ord != null) o.ord = x.ord;   // 検査の順番（長押しで入れ替え）
+  o.bk = x.bk || []; o.rb = x.rb || 0;   // 検査から前工程へ戻した記録 / 戻り中
   return o;
 }
 function safeParse_(t){ try { return JSON.parse(t); } catch (e) { return []; } }
@@ -158,6 +159,7 @@ function buildJisseki_(sh, date, rows, andons){   // 1行＝1つの品番の流�
     var ev = [];
     (j.adj || []).forEach(function(x){ ev.push([x[0], x[4] || j.tab3 || '', x[2] + ' ' + (x[1] > 0 ? '+' : '') + x[1] + (x[3] ? '（' + x[3] + '）' : '')]); });
     (j.paus || []).forEach(function(p){ ev.push([p[0], p[1], '一時中断']); });
+    (j.bk || []).forEach(function(b){ ev.push([b[0], b[4] || '', '検査用段取りへ戻す ' + b[1] + '→' + b[2] + '箱' + (b[3] ? '（' + b[3] + '）' : '')]); });
     if (j.only) ev.push([j.tp, j.tab0 || '', '検査のみ入力 ' + n1 + '箱']);
     ev.sort(function(x, y){ return x[0] - y[0]; });
     var tabs = []; ev.forEach(function(x){ if (x[1] && tabs.indexOf(x[1]) < 0) tabs.push(x[1]); });
