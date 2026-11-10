@@ -248,7 +248,7 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-10b</span>
+    <span class="ver">ver 2026-11-10c</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -285,12 +285,12 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-10b';
+const VER='2026-11-10c';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
    リポジトリでは空のまま。設定 →「配布用ファイルをつくる」で入れたファイルを作る */
-const PRESET={gasUrl:'',key:''};
+const PRESET={gasUrl:'',key:'',master:null,mv:0};   /* master＝配布用ファイルに入れた品番マスタ（在庫カウントと同じく、開くだけで客先のボタンが出る）／mv＝入れた時刻 */
 const SRC=document.documentElement.outerHTML;   /* 配布用ファイルを作るための自分のコピー（画面を描く前に取る） */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -325,6 +325,7 @@ if(S.sn&&S.sn[0]==='段取り①')S.sn[0]=DEFSN[0];
 if(S.sn&&S.sn[2]==='段取り②')S.sn[2]=DEFSN[2];
 if(S.role==='kake')S.role='dan1';
 let master=normM(load('master',DEFAULT_MASTER));
+if(PRESET.master&&PRESET.master.length&&PRESET.mv>load('masterV',0)){master=normM(PRESET.master);save('master',master);save('masterV',PRESET.mv)}   /* 配布用ファイルの品番マスタが、この端末のものより新しければ使う */
 let sess=load('sess',null);          // 掛け作業中：{hin,sei,kb:[{s,e,q}]}
 let view='main';
 let jobs={};                          // id -> job
@@ -390,7 +391,7 @@ async function poll(){
   }catch(e){setNet(false)}
 }
 async function fetchMaster(){
-  try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);d1Built=false;return true}}catch(e){}
+  try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());d1Built=false;return true}}catch(e){}
   return false;
 }
 let andonLog=[];
@@ -1003,7 +1004,7 @@ function openSettings(){
   <div class="f"><label>品番マスタ</label><div><button class="btn sm" id="sTpl">ひな形（Excel）をつくる</button><input type="file" id="sCsv" accept=".xlsx,.csv,.txt" style="display:none">
     <div id="sDrop" class="drop"><b>ここにExcelをドラッグ＆ドロップ</b><small>（タッチして選ぶこともできます）</small></div>
     <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button></div></div>
-  <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
+  <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉、<br>品番マスタ（今の ${master.length} 件）が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
   <div class="f"><label>テストデータ</label><button class="btn sm" id="sClr">テストの記録を全部消す</button></div>
   <div class="foot"><button class="btn ghost" data-close>とじる</button><button class="btn fin" id="sSave">保存</button></div>`,()=>{
     $('#sSave').onclick=()=>{
@@ -1019,11 +1020,12 @@ function openSettings(){
     $('#sDist').onclick=()=>{const u=$('#sUrl').value.trim()||S.gasUrl,k=$('#sKey').value;
       if(!/^https:\/\/script\.google\.com\//.test(u)){alert('Apps Script URL（https://script.google.com/…/exec）を入れてください');return}
       if(!k){alert('合言葉を入れてください');return}
-      const html='<!doctype html>\n'+SRC.replace(/const PRESET=\{[^}]*\};/,()=>'const PRESET='+JSON.stringify({gasUrl:u,key:k})+';');
+      const pm=load('master',null)?master:null;   /* 取り込んだ品番マスタを入れる（仮データは入れない） */
+      const html='<!doctype html>\n'+SRC.replace(/^const PRESET=.*$/m,()=>'const PRESET='+JSON.stringify({gasUrl:u,key:k,master:pm,mv:pm?Date.now():0}).replace(/</g,'\\u003c')+';');
       const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='生産管理しくみ_配布用_'+VER+'.html';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)};
     const importMaster=async f=>{if(!f)return;
       try{const rows=await readTable(f);const m=masterFromRows(rows);
-        if(m.length){master=m;save('master',master);d1Built=false;pickCust=null;alert(m.length+' 件取り込みました')}else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
+        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert(m.length+' 件取り込みました')}else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
     const dz=$('#sDrop');dz.onclick=()=>$('#sCsv').click();
