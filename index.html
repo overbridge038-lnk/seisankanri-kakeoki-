@@ -147,7 +147,7 @@ main.four .now .hin{font-size:1.5rem}main.four .now .count b{font-size:3.2rem}
 #main .jr.d2{grid-template-columns:1.6rem minmax(4.5rem,1fr) auto 3rem 3.2rem auto}
 #main .jr.rd{grid-template-columns:minmax(4.5rem,1fr) 2.9rem 3.2rem 4rem auto;background:#f0fdf4}
 #main.four .jr .tm,#main.four .jr .lg{display:none}#main.four .jr{grid-template-columns:1.3rem minmax(3.5rem,1fr) auto 2.8rem 3.8rem 1rem;font-size:.88rem}#main.four .jr.d2{grid-template-columns:1.4rem minmax(4.5rem,1fr) auto 3rem auto}#main.four .jr.rd{grid-template-columns:minmax(4.5rem,1fr) 2.7rem 3rem 3.6rem auto}
-#main .jr.hd{background:#e2e8f0;font-size:.78rem;font-weight:800;color:#334155;min-height:1.4rem}
+#main .jr.hd{background:#e2e8f0;font-size:.78rem;font-weight:800;color:#334155;min-height:1.4rem}#main .jr.hd span{white-space:nowrap}
 #main .jr:last-child{border-bottom:0}
 #main .jr.drag{box-shadow:0 8px 20px rgba(0,0,0,.35);background:#fff7ed}
 #main .jr.drop{border-top:4px solid #f59e0b}#main .jr.dropb{border-bottom:4px solid #f59e0b}
@@ -229,7 +229,7 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 .job .qp{color:#6d28d9;font-weight:800}
 @media (max-width:900px){main.split{grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr)}main.split.four{grid-template-columns:repeat(3,minmax(0,1fr))}.job{grid-template-columns:2rem 5.5rem 1fr}.job .eta{grid-column:1/-1;text-align:left;display:flex;gap:.8rem;align-items:baseline}}
 /* スマホなど細い画面：3つの工程は横に並べず、上から順に縦に並べてスクロール */
-@media (max-width:700px){main.split.four{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto;background:var(--bg)}main.split.four .pane{overflow:visible;min-height:auto;border-bottom:4px solid #94a3b8}}
+@media (max-width:700px){main.split.four{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto;background:var(--bg)}main.split.four .pane{overflow:visible;min-height:auto;border-bottom:4px solid #94a3b8}main.split.four #paneKensa{padding-bottom:45vh}}
 </style>
 </head>
 <body>
@@ -248,7 +248,7 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-10c</span>
+    <span class="ver">ver 2026-11-10d</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -285,7 +285,7 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-10c';
+const VER='2026-11-10d';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -379,6 +379,7 @@ async function flush(){
   try{
     await gas('POST',null,{action:'upsert',jobs:ids.map(i=>ob[i])});
     const now=outbox();ids.forEach(i=>{if(now[i]&&now[i].u===ob[i].u)delete now[i]});save('outbox',now);setNet(true);
+    if(Object.keys(now).length)setTimeout(flush,200);   /* 送っているあいだに増えた分は、5秒待たずに続けて送る */
   }catch(e){setNet(false)}
   flushing=false;
 }
@@ -481,7 +482,7 @@ function pickQrless(){
 }
 
 /* ====== 段取り①：生産する品番をハンド入力（品番・背番・箱数） ====== */
-let plan=load('plan3',[{hin:'',box:''}]),d1Built=false;
+let plan=load('plan3',[{hin:'',box:''}]),d1Built=false,sentOpen=false;
 const nh=x=>String(x??'').normalize('NFKC').trim().toUpperCase();
 function savePlan(){save('plan3',plan)}
 /* 検索：品番・背番の一部で絞り込む（全角半角・大小文字はそろえて比べる） */
@@ -519,8 +520,9 @@ function updDan1(){
   if(!d1Built)return;
   const v=d1Valid(),tb=fn(v.reduce((a,p)=>a+(+p.box||0),0));
   $('#d1sum').innerHTML=`入力済み <b>${v.length}</b> 品番　箱数合計 <b>${tb}</b>`;$('#d1ok').disabled=!v.length;$('#d1ok').textContent='送信（'+SN(2)+'へ）';
-  const mine=Object.values(jobs).filter(j=>j.tab===S.name&&j.t1&&j.st!=='cancel'&&ymd(j.t1)===ymd(Date.now())).sort((a,b)=>b.t1-a.t1).slice(0,5);
-  $('#d1sent').innerHTML=mine.length?`<h2>さっき送ったもの（今日）</h2><div class="sent">${mine.map(j=>`<div><span>${esc(j.hin)}　${j.n}箱</span><small>${hm(j.t1)}</small></div>`).join('')}</div>`:'';
+  const mine=Object.values(jobs).filter(j=>j.tab===S.name&&j.t1&&j.st!=='cancel'&&ymd(j.t1)===ymd(Date.now())).sort((a,b)=>b.t1-a.t1);
+  /* さっき送ったもの：ふだんはボタンだけ。押すと今日送ったものを新しい順に全部出す（もう一度押すと閉じる） */
+  $('#d1sent').innerHTML=mine.length?`<button class="btn sm" id="d1sentBtn" style="width:100%">さっき送ったもの（今日 ${mine.length}件）${sentOpen?'▲ とじる':'▼ 見る'}</button>${sentOpen?`<div class="sent" style="margin-top:.4rem">${mine.map(j=>`<div><span>${esc(j.hin)}　${j.n}箱</span><small>${hm(j.t1)}</small></div>`).join('')}</div>`:''}`:'';
 }
 function renderDan1(){if(!showDan1()||view!=='main')return;if(!d1Built)buildDan1();else updDan1()}
 function addRow(){plan.push({hin:'',box:''});savePlan();buildDan1(true)}
@@ -773,7 +775,9 @@ async function renderJisseki(){
   :'<div class="empty">この日の実績はありません</div>';
 }
 const stName=s=>({wait:'待ち',ready:'準備OK',done:'検査完了',cancel:'取消'}[s]||s);
-const stLabel=j=>stg(j)===2?SN(2)+'待ち':stg(j)===1?SN(1)+'待ち':stName(j.st);
+/* 前の日までの残り：検査用段取り・検査の一覧に残っている品番（今日より前に送ったもの） */
+const oldLeft=td=>Object.values(jobs).filter(j=>(stg(j)===2||stg(j)===3)&&(j.st==='wait'||j.st==='ready')&&ymd(j.t1||j.tp)<td);
+const stLabel=j=>j.st==='cancel'?'取消':stg(j)===2?SN(2)+'待ち':stg(j)===1?SN(1)+'待ち':stName(j.st);
 function aggregate(rows){
   const t={},h={};
   rows.forEach(j=>{const m=(j.t1-j.t0)/60000;
@@ -1005,6 +1009,7 @@ function openSettings(){
     <div id="sDrop" class="drop"><b>ここにExcelをドラッグ＆ドロップ</b><small>（タッチして選ぶこともできます）</small></div>
     <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button></div></div>
   <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉、<br>品番マスタ（今の ${master.length} 件）が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
+  <div class="f"><label>前の日までの残り</label><div><button class="btn sm" id="sOld">前の日までの残りを消す</button><div class="dnote">検査用段取り・検査の一覧に残っている、前の日までの品番を消します。<br>全部のタブレットから消えます（記録は「取消」として残ります）</div></div></div>
   <div class="f"><label>テストデータ</label><button class="btn sm" id="sClr">テストの記録を全部消す</button></div>
   <div class="foot"><button class="btn ghost" data-close>とじる</button><button class="btn fin" id="sSave">保存</button></div>`,()=>{
     $('#sSave').onclick=()=>{
@@ -1017,6 +1022,11 @@ function openSettings(){
     $('#sClr').onclick=()=>{if(confirm('テストの記録を全部消します。よいですか？')){save('jobs_test',{});sess=null;save('sess',null);loadJobs();closeModal();renderAll()}};
     $('#sGetM').onclick=async()=>{S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;$('#sGetM').textContent=(await fetchMaster())?'取得しました（'+master.length+'件）':'取得できませんでした'};
     $('#sTpl').onclick=()=>downloadMasterTpl();
+    $('#sOld').onclick=()=>{const td=ymd(Date.now()),L=oldLeft(td);
+      if(!L.length){alert('前の日までの残りはありません');return}
+      const n2=L.filter(j=>stg(j)===2).length,n3=L.length-n2;
+      if(!confirm('前の日までの残り '+L.length+'件（'+SN(2)+' '+n2+'件・'+SN(3)+' '+n3+'件）を消します。\n全部のタブレットから消えます。よいですか？'))return;
+      const now=Date.now();L.forEach(j=>{j.st='cancel';j.td=now;upsert(j)});closeModal();toast('前の日までの残り '+L.length+'件を消しました')};
     $('#sDist').onclick=()=>{const u=$('#sUrl').value.trim()||S.gasUrl,k=$('#sKey').value;
       if(!/^https:\/\/script\.google\.com\//.test(u)){alert('Apps Script URL（https://script.google.com/…/exec）を入れてください');return}
       if(!k){alert('合言葉を入れてください');return}
@@ -1124,6 +1134,7 @@ $('#paneDan1').addEventListener('click',e=>{
 });
 $('#d1pick').addEventListener('click',e=>{const c=e.target.closest('[data-cu]'),k=e.target.closest('[data-pk]');
   if(c){pickCust=c.dataset.cu||null;renderPick()}else if(k)pickItem(k.dataset.pk)});
+$('#d1sent').addEventListener('click',e=>{if(e.target.closest('#d1sentBtn')){sentOpen=!sentOpen;updDan1()}});
 $('#d1add').onclick=addRow;$('#d1ok').onclick=confirmPlan;
 $('#paneDan2').addEventListener('click',e=>{const b=e.target.closest('button[data-adv],button[data-ed]');if(!b)return;const id=b.closest('[data-id]').dataset.id;if(b.dataset.ed)openQty(id,'dan2');else advance(id)});
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;layout();renderHeader();if(view==='jisseki')renderJisseki();else renderAll()});
