@@ -113,6 +113,7 @@ input,select{font-size:1.05rem;padding:.5rem .7rem;border:2px solid var(--line);
 #toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:#0f172a;color:#fff;padding:.8rem 1.2rem;border-radius:.9rem;display:none;gap:1rem;align-items:center;z-index:70;font-weight:700;font-size:1.05rem}
 #toast.on{display:flex}
 #toast button{background:#fbbf24;border:0;border-radius:.5rem;padding:.4rem .9rem;font-weight:800;font-size:1rem;cursor:pointer}
+#toast{width:max-content;max-width:calc(100% - 2rem)}#toast button{white-space:nowrap;flex:none}#toastMsg{text-wrap:balance}
 #alarm{position:fixed;inset:0;background:rgba(185,28,28,.94);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;z-index:80;text-align:center;padding:1rem;animation:bl 1s infinite}
 #alarm.on{display:flex}
 #alarm h2{font-size:2.4rem;color:#fff;margin:0}
@@ -227,6 +228,8 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 .pl .qn{font-weight:800;font-size:1.2rem}
 .job .qp{color:#6d28d9;font-weight:800}
 @media (max-width:900px){main.split{grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr)}main.split.four{grid-template-columns:repeat(3,minmax(0,1fr))}.job{grid-template-columns:2rem 5.5rem 1fr}.job .eta{grid-column:1/-1;text-align:left;display:flex;gap:.8rem;align-items:baseline}}
+/* スマホなど細い画面：3つの工程は横に並べず、上から順に縦に並べてスクロール */
+@media (max-width:700px){main.split.four{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto;background:var(--bg)}main.split.four .pane{overflow:visible;min-height:auto;border-bottom:4px solid #94a3b8}}
 </style>
 </head>
 <body>
@@ -330,10 +333,11 @@ let online=true, warn=null, warnTimer=null, alarmOn=false, snoozeUntil=0, alarmT
 const live=()=>S.mode==='live';
 const jobsKey=()=>'jobs_'+S.mode;
 const sp4=()=>S.mode==='test'&&S.split;
-const showDan1=()=>sp4()||S.role==='dan1';
+const allV=()=>sp4()||S.role==='all';   /* 3つの工程を横に並べて見る（テスト、または役割「全部の工程」） */
+const showDan1=()=>allV()||S.role==='dan1';
 const showKake=()=>false;   /* QR読取はいったん中止（全部ハンド入力） */
-const showDan2=()=>sp4()||S.role==='dan2';
-const showKensa=()=>sp4()||S.role==='kensa';
+const showDan2=()=>allV()||S.role==='dan2';
+const showKensa=()=>allV()||S.role==='kensa';
 const stg=j=>j.stage??3;
 const planned=()=>Object.values(jobs).filter(j=>stg(j)===1&&j.st==='wait').sort((a,b)=>a.tp-b.tp);
 const stNum=st=>({wait:0,ready:1,done:2}[st]);
@@ -683,8 +687,8 @@ function setStatus(id,st){
 
 /* ====== 描画 ====== */
 function renderHeader(){
-  const h=$('#hdr');h.className=sp4()?'r-both':S.role==='kensa'?'r-kensa':(S.role==='dan1'||S.role==='dan2')?'r-dan':'r-kake';
-  $('#hRole').textContent=sp4()?'3画面（テスト）':SN({dan1:0,kake:1,dan2:2,kensa:3}[S.role]);
+  const h=$('#hdr');h.className=allV()?'r-both':S.role==='kensa'?'r-kensa':(S.role==='dan1'||S.role==='dan2')?'r-dan':'r-kake';
+  $('#hRole').textContent=sp4()?'3画面（テスト）':S.role==='all'?'全部の工程':SN({dan1:0,kake:1,dan2:2,kensa:3}[S.role]);
   $('#hName').textContent=S.name||'名前未設定';
   const n=Object.keys(outbox()).length;
   const net=$('#hNet');
@@ -694,7 +698,7 @@ function renderHeader(){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
 }
 function layout(){
-  const split=sp4();
+  const split=allV();
   const m=$('#main');m.className=(split&&view==='main')?'split four':'';
   const on=view==='main';
   $('#paneDan1').classList.toggle('hide',!(on&&showDan1()));
@@ -923,7 +927,7 @@ $('#toastUndo').onclick=()=>{$('#toast').classList.remove('on');if(undoFn)undoFn
    異常やこまりごとをその場で知らせる。全端末の画面が黄・赤に点滅し、対応者が「対応します」を押すまで鳴り続ける。
    記録は stage=9 の行として保存（hin=理由 / maker=工程 / sei=対応者 / tp=呼出 / td=対応）。 */
 const REASONS=['品質','設備','部品・材料','その他'];
-const myProc=()=>sp4()?'テスト':SN({dan1:0,kake:1,dan2:2,kensa:3}[S.role]||0);
+const myProc=()=>sp4()?'テスト':S.role==='all'?'全部の工程':SN({dan1:0,kake:1,dan2:2,kensa:3}[S.role]||0);
 const activeAndons=()=>Object.values(jobs).filter(j=>stg(j)===9&&j.st==='wait').sort((a,b)=>a.tp-b.tp);
 function openAndon(){
   const mine=activeAndons().filter(j=>j.tab===S.name);
@@ -987,7 +991,7 @@ $('#alarmFin').onclick=()=>{stopAlarm();confirmFinish()};
 function openSettings(){
   openModal(`<h3>設定</h3>
   <div class="f"><label>タブレット名</label><input id="sName" value="${esc(S.name)}"><small>端末ごとに固定の名前（実績に記録されます）</small></div>
-  <div class="f"><label>この端末の役割</label><select id="sRole">${[['dan1',0],['dan2',2],['kensa',3]].map(([k,i])=>`<option value="${k}" ${S.role===k?'selected':''}>${esc(SN(i))}</option>`).join('')}</select></div>
+  <div class="f"><label>この端末の役割</label><select id="sRole">${[['dan1',0],['dan2',2],['kensa',3]].map(([k,i])=>`<option value="${k}" ${S.role===k?'selected':''}>${esc(SN(i))}</option>`).join('')+`<option value="all" ${S.role==='all'?'selected':''}>全部の工程（3つを横に並べる）</option>`}</select></div>
   <div class="f"><label>工程の名前（1〜3）</label><div class="row">${[0,2,3].map(i=>`<input id="sn${i}" value="${esc(SN(i))}" style="width:8rem">`).join('')}</div></div>
   <div class="f"><label>動かし方</label><select id="sMode"><option value="test" ${S.mode==='test'?'selected':''}>テストモード（この端末だけ・Wi-Fi不要）</option><option value="live" ${S.mode==='live'?'selected':''}>本番（Googleスプレッドシートにつなぐ）</option></select></div>
   <div class="f"><label>テスト：画面の並べ方</label><select id="sSplit"><option value="1" ${S.split?'selected':''}>3つの工程を横に並べる</option><option value="0" ${!S.split?'selected':''}>役割の画面だけ</option></select></div>
