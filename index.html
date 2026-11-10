@@ -283,6 +283,8 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 'use strict';
 /* ====== 基本 ====== */
 const VER='2026-11-10';
+/* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
+const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -308,7 +310,7 @@ const normM=m=>(m||[]).map(x=>{const o={cust:String(x.cust??x.maker??'').trim()|
   acc.push(o);return acc},[]);
 const DEFSN=['段取り①+掛け','掛け','検査用段取り','検査'];  /* QR読取（掛け単独画面）はいったん中止。[1]は将来用に残す */
 const SN=i=>(S.sn&&S.sn[i])||DEFSN[i];
-const DEF={sn:DEFSN.slice(),name:'タブレット1',role:'kake',mode:'test',split:true,gasUrl:'',key:'',etaMin:180,idleMin:15,scale:100};
+const DEF={sn:DEFSN.slice(),name:'タブレット1',role:'kake',mode:onGas?'live':'test',split:true,gasUrl:'',key:'',etaMin:180,idleMin:15,scale:100};
 let S=Object.assign({},DEF,load('settings',{}));
 if(S.sn&&S.sn[0]==='段取り①')S.sn[0]=DEFSN[0];
 if(S.sn&&S.sn[2]==='段取り②')S.sn[2]=DEFSN[2];
@@ -347,6 +349,11 @@ function upsert(job){
   renderAll();
 }
 async function gas(method,params,body){
+  if(onGas){
+    const req=body?{body:Object.assign({key:S.key||''},body)}:{params:Object.assign({key:S.key||''},params||{})};
+    const j=JSON.parse(await new Promise((ok,ng)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ng).api(req)));
+    if(!j.ok)throw new Error(j.error||'error');return j;
+  }
   const url=S.gasUrl.trim();if(!url)throw new Error('no url');
   const u=new URL(url);u.searchParams.set('key',S.key||'');if(params)for(const k in params)u.searchParams.set(k,params[k]);
   if(body)body=Object.assign({key:S.key||''},body);
@@ -977,7 +984,7 @@ function openSettings(){
   <div class="f"><label>工程の名前（1〜3）</label><div class="row">${[0,2,3].map(i=>`<input id="sn${i}" value="${esc(SN(i))}" style="width:8rem">`).join('')}</div></div>
   <div class="f"><label>動かし方</label><select id="sMode"><option value="test" ${S.mode==='test'?'selected':''}>テストモード（この端末だけ・Wi-Fi不要）</option><option value="live" ${S.mode==='live'?'selected':''}>本番（Googleスプレッドシートにつなぐ）</option></select></div>
   <div class="f"><label>テスト：画面の並べ方</label><select id="sSplit"><option value="1" ${S.split?'selected':''}>3つの工程を横に並べる</option><option value="0" ${!S.split?'selected':''}>役割の画面だけ</option></select></div>
-  <div class="f"><label>Apps Script URL</label><input id="sUrl" value="${esc(S.gasUrl)}" placeholder="https://script.google.com/macros/s/…/exec"></div>
+  <div class="f"><label>Apps Script URL</label><input id="sUrl" value="${esc(S.gasUrl)}" placeholder="https://script.google.com/macros/s/…/exec"${onGas?' disabled':''}>${onGas?'<small>Googleから開いているので入力はいりません</small>':''}</div>
   <div class="f"><label>合言葉</label><input id="sKey" type="password" value="${esc(S.key||'')}" autocomplete="off"><small>Code.gs の KEY と同じ文字を入れる（社外に出さない）</small></div>
   <div class="f"><label>到着予定（完了＋分）</label><input id="sEta" type="number" min="1" value="${S.etaMin}"></div>
   <div class="f"><label>押し忘れ警告（分）</label><input id="sIdle" type="number" min="1" value="${S.idleMin}"></div>
@@ -990,7 +997,7 @@ function openSettings(){
     $('#sSave').onclick=()=>{
       S.name=$('#sName').value.trim()||'タブレット1';S.sn=[0,1,2,3].map(i=>($('#sn'+i)&&$('#sn'+i).value.trim())||SN(i));d1Built=false;S.role=$('#sRole').value;S.mode=$('#sMode').value;S.split=$('#sSplit').value==='1';
       S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;S.etaMin=+$('#sEta').value||180;S.idleMin=+$('#sIdle').value||15;S.scale=+$('#sScale').value;
-      if(S.mode==='live'&&!S.gasUrl){alert('本番にするには Apps Script URL が必要です');return}
+      if(S.mode==='live'&&!S.gasUrl&&!onGas){alert('本番にするには Apps Script URL が必要です');return}
       if(S.mode==='live'&&!S.key){alert('本番にするには 合言葉 が必要です');return}
       save('settings',S);loadJobs();closeModal();layout();renderAll();if(live()){flush();poll();fetchMaster().then(()=>renderAll())}
     };
@@ -1116,6 +1123,7 @@ $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscree
 /* ====== 起動 ====== */
 loadJobs();layout();renderAll();tick();
 if(live()){flush();poll();fetchMaster()}
+if(onGas&&live()&&!S.key)setTimeout(openSettings,500);   /* Googleから初めて開いたタブレット：タブレット名・役割・合言葉を入れてもらう */
 </script>
 </body>
 </html>

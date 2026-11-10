@@ -7,12 +7,15 @@
  * 2-2. 下の KEY（合言葉）を社内だけで決めた文字に変える。HTMLの 設定 → 合言葉 にも同じ文字を入れる
  * 3. デプロイ → 新しいデプロイ → 種類「ウェブアプリ」
  *      実行ユーザー：自分 ／ アクセスできるユーザー：全員（または会社内の全員）
- * 4. 出てきた「ウェブアプリのURL（…/exec）」を、HTMLの 設定 → Apps Script URL に貼る
+ * 3-2. Apps Script の画面で「ファイル ＋ → HTML」を押し、名前を index にして、index.html の中身を全部貼って保存
+ * 4. 出てきた「ウェブアプリのURL（…/exec）」を、全タブレットのブラウザで開く（ホーム画面に追加すると便利）
+ *      → 画面がGoogleから出て、最初から本番。各タブレットの 設定 で「タブレット名・役割・合言葉」だけ入れる
+ *      （index.html を直接開いて使うときは、設定 → Apps Script URL にこのURLを貼る）
  * 5. シート「品番マスタ」を作り、A列=客先 / B列=名称 / C列=品番・背番 を入れる（1行目は見出し。HTMLの「ひな形」と同じ形）
  * 6. 毎日の実績Excel保存：setupDailyTrigger を1回だけ実行（Googleドライブのフォルダ名は下の EXPORT_FOLDER_NAME）
  *
  * ※項目を増やしたため、前のバージョンで作った「かんばん実績」シートがある場合は、シートを削除してから使う（自動で作り直す）
- * ※コードを変えたら「デプロイを管理 → 編集 → 新バージョン」で再デプロイが必要
+ * ※コードや index（画面）を変えたら「デプロイを管理 → 編集 → 新バージョン」で再デプロイが必要（URLは変わらない）
  */
 var KEY = 'kyoho-change-me';   // ★合言葉（HTML側の設定と同じにする）
 var SHEET_NAME = 'かんばん実績';
@@ -46,14 +49,14 @@ function jobToRow_(j){
   return [String(j.id), ymd_(j.t1 || j.tp), j.tab || '', String(j.hin), String(j.sei || ''), j.n || 0, j.nq || 0,
     hm_(j.t0), hm_(j.t1), j.t1 ? Math.round((j.t1 - j.t0) / 6000) / 10 : '', hm_(j.eta), ST_OUT[j.st] || j.st, hm_(j.tr), hm_(j.td),
     j.t0 || '', j.t1 || '', j.eta || '', j.tr || '', j.td || '', j.u, JSON.stringify(j.kb || []),
-    j.stage == null ? 3 : j.stage, j.maker || '', j.qty == null ? '' : j.qty, j.tp || '', j.ins || 0, JSON.stringify(j.adj || []), JSON.stringify({tab2: j.tab2 || '', ta2: j.ta2 || null, tab3: j.tab3 || '', ses: j.ses || [], n2: j.n2 == null ? null : j.n2, only: j.only || 0, tab0: j.tab0 || '', pz: j.pz || null, paus: j.paus || []})];
+    j.stage == null ? 3 : j.stage, j.maker || '', j.qty == null ? '' : j.qty, j.tp || '', j.ins || 0, JSON.stringify(j.adj || []), JSON.stringify({tab2: j.tab2 || '', ta2: j.ta2 || null, tab3: j.tab3 || '', ses: j.ses || [], n2: j.n2 == null ? null : j.n2, only: j.only || 0, tab0: j.tab0 || '', pz: j.pz || null, paus: j.paus || [], ord: j.ord == null ? null : j.ord})];
 }
 function rowToJob_(r){
   var o = {id:String(r[0]), tab:r[2], hin:String(r[3]), sei:String(r[4]), n:r[5], nq:r[6], st:ST_IN[r[11]] || 'wait',
     t0:r[14] || null, t1:r[15] || null, eta:r[16] || null, tr:r[17] || undefined, td:r[18] || undefined, u:r[19], kb:safeParse_(r[20]),
     stage:r[21] === '' ? 3 : r[21], maker:String(r[22] || ''), qty:r[23] === '' ? null : r[23], tp:r[24] || null, ins:Number(r[25]) || 0, adj:safeParse_(r[26])};
   var x = {}; try { x = JSON.parse(r[27]) || {}; } catch (e) {}
-  o.tab2 = x.tab2 || ''; o.ta2 = x.ta2 || null; o.tab3 = x.tab3 || ''; o.ses = x.ses || []; o.n2 = x.n2 == null ? null : x.n2; o.only = x.only || 0; o.tab0 = x.tab0 || ''; o.pz = x.pz || null; o.paus = x.paus || [];
+  o.tab2 = x.tab2 || ''; o.ta2 = x.ta2 || null; o.tab3 = x.tab3 || ''; o.ses = x.ses || []; o.n2 = x.n2 == null ? null : x.n2; o.only = x.only || 0; o.tab0 = x.tab0 || ''; o.pz = x.pz || null; o.paus = x.paus || []; if (x.ord != null) o.ord = x.ord;   // 検査の順番（長押しで入れ替え）
   return o;
 }
 function safeParse_(t){ try { return JSON.parse(t); } catch (e) { return []; } }
@@ -66,12 +69,16 @@ function readRows_(s){
 }
 
 function doPost(e){
+  var body;
+  try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ok: false, error: String(err)}); }
+  return json_(post_(body));
+}
+function post_(body){
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    var body = JSON.parse(e.postData.contents);
-    if (body.key !== KEY) return json_({ok: false, error: '合言葉がちがいます'});
-    if (body.action !== 'upsert') return json_({ok: false, error: 'unknown action'});
+    if (body.key !== KEY) return {ok: false, error: '合言葉がちがいます'};
+    if (body.action !== 'upsert') return {ok: false, error: 'unknown action'};
     var s = sheet_(), rd = readRows_(s), idx = {};
     rd.rows.forEach(function(r, i){ idx[String(r[0])] = rd.start + i; });
     var adds = [];
@@ -84,32 +91,47 @@ function doPost(e){
       } else adds.push(row);
     });
     if (adds.length) s.getRange(s.getLastRow() + 1, 1, adds.length, HEAD.length).setValues(adds);
-    return json_({ok: true, saved: body.jobs.length});
+    return {ok: true, saved: body.jobs.length};
   } catch (err) {
-    return json_({ok: false, error: String(err)});
+    return {ok: false, error: String(err)};
   } finally { lock.releaseLock(); }
 }
 
 function doGet(e){
+  var p = (e && e.parameter) || {};
+  if (!p.action && !p.key) return page_();   // URLをそのまま開いたときは画面（index）を出す
+  return json_(get_(p));
+}
+/* 画面：Apps Script の HTMLファイル「index」（index.html の中身）を出す。全タブレットはこのURLを開くだけ */
+function page_(){
+  return HtmlService.createHtmlOutputFromFile('index').setTitle('生産管理しくみ')
+    .addMetaTag('viewport', 'width=device-width,initial-scale=1,viewport-fit=cover');
+}
+/* Googleから開いた画面からの呼び出し（google.script.run）。中身は doGet / doPost と同じ */
+function api(req){
+  req = req || {};
+  return JSON.stringify(req.body ? post_(req.body) : get_(req.params || {}));
+}
+function get_(p){
   try {
-    if (!e.parameter || e.parameter.key !== KEY) return json_({ok: false, error: '合言葉がちがいます'});
-    var a = e.parameter.action || 'list';
+    if (p.key !== KEY) return {ok: false, error: '合言葉がちがいます'};
+    var a = p.action || 'list';
     if (a === 'master') {
       var m = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(MASTER_NAME);
-      if (!m || m.getLastRow() < 2) return json_({ok: true, master: []});
+      if (!m || m.getLastRow() < 2) return {ok: true, master: []};
       var v = m.getRange(2, 1, m.getLastRow() - 1, 3).getValues();
-      return json_({ok: true, master: v.filter(function(r){ return r[1] !== '' || r[2] !== ''; })
-        .map(function(r){ return {cust: String(r[0]), name: String(r[1]), hin: String(r[2])}; })});
+      return {ok: true, master: v.filter(function(r){ return r[1] !== '' || r[2] !== ''; })
+        .map(function(r){ return {cust: String(r[0]), name: String(r[1]), hin: String(r[2])}; })};
     }
     if (a === 'list') {
-      var rows = readRows_(sheet_()).rows, date = e.parameter.date, lim = Date.now() - 2 * 864e5;
+      var rows = readRows_(sheet_()).rows, date = p.date, lim = Date.now() - 2 * 864e5;
       var out = rows.filter(function(r){ return r[0] !== ''; }).map(rowToJob_).filter(function(j){
         return date ? ymd_(j.t1 || j.tp) === date : ((j.st !== 'done' && j.st !== 'cancel') || (j.td || j.t1 || j.tp) >= lim);
       });
-      return json_({ok: true, jobs: out});
+      return {ok: true, jobs: out};
     }
-    return json_({ok: false, error: 'unknown action'});
-  } catch (err) { return json_({ok: false, error: String(err)}); }
+    return {ok: false, error: 'unknown action'};
+  } catch (err) { return {ok: false, error: String(err)}; }
 }
 
 /* ===== 実績シート（タブレットごとに 段取り①+掛け／検査用段取り／検査／異常記録 を横に並べる。1箱当たりは 分/箱） ===== */
