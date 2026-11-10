@@ -1126,7 +1126,7 @@ document.querySelectorAll('[data-qc]').forEach(b=>b.onclick=()=>{const i=$('#'+b
 ['dragover','drop'].forEach(t=>window.addEventListener(t,e=>{if(!e.target.closest||!e.target.closest('#sDrop'))e.preventDefault()}));
 /* 手動更新：未送信を送り、最新を受け取って画面を描き直す */
 $('#btnRef').onclick=async()=>{
-  if(live()){await flush();await poll()}else loadJobs();
+  if(live()){await flush();await poll();await fetchMaster()}else loadJobs();   /* 更新：品番マスタ（客先のボタン）も読み直す */
   if(view==='jisseki')renderJisseki();else{d1Built=false;renderAll()}
   toast('最新の状態に更新しました（'+hm(Date.now())+'）');
 };
@@ -1134,7 +1134,7 @@ $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscree
 
 /* ====== 起動 ====== */
 loadJobs();layout();renderAll();tick();
-if(live()){flush();poll();fetchMaster()}
+if(live()){flush();poll();fetchMaster().then(ok=>{if(ok)renderAll()})}   /* 品番マスタを読んだら客先のボタンを描き直す */
 if(live()&&(firstRun||!S.key))setTimeout(openSettings,500);   /* 初めて開いたタブレット（配布用ファイル・Google）：タブレット名・役割（・合言葉）を入れてもらう */
 </script>
 </body>
