@@ -112,6 +112,7 @@ input,select{font-size:1.05rem;padding:.5rem .7rem;border:2px solid var(--line);
 .pick button small{display:block;color:var(--mut);font-weight:600}
 #toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:#0f172a;color:#fff;padding:.8rem 1.2rem;border-radius:.9rem;display:none;gap:1rem;align-items:center;z-index:70;font-weight:700;font-size:1.05rem}
 #toast.on{display:flex}
+#modal.on~#toast{top:.6rem;bottom:auto}   /* 検査の画面などを開いているあいだのお知らせは上に出す（下のボタンにかぶらない） */
 #toast button{background:#fbbf24;border:0;border-radius:.5rem;padding:.4rem .9rem;font-weight:800;font-size:1rem;cursor:pointer}
 #toast{width:max-content;max-width:calc(100% - 2rem)}#toast button{white-space:nowrap;flex:none}#toastMsg{text-wrap:balance}
 #alarm{position:fixed;inset:0;background:rgba(185,28,28,.94);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;z-index:80;text-align:center;padding:1rem;animation:bl 1s infinite}
@@ -249,7 +250,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-10f</span>
+    <span class="ver">ver 2026-11-10g</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -286,7 +287,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-10f';
+const VER='2026-11-10g';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -646,7 +647,8 @@ function drawInsp(){
     w.innerHTML='<div class="wi"></div>'+Array.from({length:max+1},(_,v)=>`<div class="wi">${pad(v)}</div>`).join('')+'<div class="wi"></div>';
     const mark=()=>w.querySelectorAll('.wi').forEach((x,i)=>x.classList.toggle('on',i-1===insp.t[k]));
     requestAnimationFrame(()=>{w.scrollTop=insp.t[k]*w.children[1].offsetHeight;mark()});
-    let tm=null;w.addEventListener('scroll',()=>{clearTimeout(tm);tm=setTimeout(()=>{const ih=w.children[1].offsetHeight;
+    let tm=null;w.addEventListener('scroll',()=>{clearTimeout(tm);tm=setTimeout(()=>{if(!w.isConnected)return;const ih=w.children[1].offsetHeight;if(!(ih>0))return;   /* 描き直して消えたホイールは読まない（時間が NaN になるのを防ぐ） */
+      
       insp.t[k]=Math.max(0,Math.min(max,Math.round(w.scrollTop/ih)));mark()},90)});
     w.addEventListener('click',e=>{const it=e.target.closest('.wi');if(!it||!it.textContent)return;insp.t[k]=+it.textContent;w.scrollTo({top:insp.t[k]*it.offsetHeight,behavior:'smooth'});mark()});
   });
@@ -656,6 +658,7 @@ function drawInsp(){
   $('#iReg').onclick=()=>{
     const bx=+$('#iBx').value,d0=new Date();d0.setSeconds(0,0);
     const st=new Date(d0).setHours(insp.t.sH,insp.t.sM),en=new Date(d0).setHours(insp.t.eH,insp.t.eM);
+    if(isNaN(st)||isNaN(en)){alert('時間が読み取れませんでした。もう一度「今」を押すか、ホイールで時間を合わせてください');return}
     if(en<st){alert('検査終了の時間が、検査開始より前になっています');return}
     if(!Number.isInteger(bx)||bx<1){alert('処理した箱数を1以上で入れてください');return}
     if(bx>r){alert('のこり '+fn(r)+'箱より多いです。数が違うときは「ハンド入力」で直してください');return}
@@ -948,7 +951,8 @@ async function readXlsx(buf){   /* ライブラリなしで .xlsx の1枚目の�
 }
 
 /* ====== モーダル・通知 ====== */
-function openModal(html,mount){$('#dlg').innerHTML=html;$('#modal').classList.add('on');modalOpen=true;if(mount)mount()}
+function openModal(html,mount){$('#toast').classList.remove('on');clearTimeout(toastT);   /* 画面を開いたら、前のお知らせは消す（ボタンにかぶらないように） */
+  $('#dlg').innerHTML=html;$('#modal').classList.add('on');modalOpen=true;if(mount)mount()}
 function closeModal(){$('#modal').classList.remove('on');modalOpen=false;renderAll()}
 $('#modal').addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeModal()});
 let toastT=null,undoFn=null;
