@@ -362,8 +362,9 @@ async function gas(method,params,body){
   }
   const url=S.gasUrl.trim();if(!url)throw new Error('no url');
   const u=new URL(url);u.searchParams.set('key',S.key||'');if(params)for(const k in params)u.searchParams.set(k,params[k]);
+  u.searchParams.set('_',Date.now());   /* スマホのブラウザが前の答えを使い回さないように、毎回ちがうURLにする（在庫カウントと同じ） */
   if(body)body=Object.assign({key:S.key||''},body);
-  const r=await fetch(u.toString(),body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow'}:{redirect:'follow'});
+  const r=await fetch(u.toString(),body?{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow',cache:'no-store'}:{redirect:'follow',cache:'no-store'});
   const j=await r.json();if(!j.ok)throw new Error(j.error||'error');return j;
 }
 async function flush(){
