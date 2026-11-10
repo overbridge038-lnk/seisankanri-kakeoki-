@@ -285,6 +285,10 @@ details.mk summary{padding:.8rem 1rem;font-size:1.2rem;cursor:pointer;min-height
 const VER='2026-11-10';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
+/* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
+   リポジトリでは空のまま。設定 →「配布用ファイルをつくる」で入れたファイルを作る */
+const PRESET={gasUrl:'',key:''};
+const SRC=document.documentElement.outerHTML;   /* 配布用ファイルを作るための自分のコピー（画面を描く前に取る） */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -310,8 +314,10 @@ const normM=m=>(m||[]).map(x=>{const o={cust:String(x.cust??x.maker??'').trim()|
   acc.push(o);return acc},[]);
 const DEFSN=['段取り①+掛け','掛け','検査用段取り','検査'];  /* QR読取（掛け単独画面）はいったん中止。[1]は将来用に残す */
 const SN=i=>(S.sn&&S.sn[i])||DEFSN[i];
-const DEF={sn:DEFSN.slice(),name:'タブレット1',role:'kake',mode:onGas?'live':'test',split:true,gasUrl:'',key:'',etaMin:180,idleMin:15,scale:100};
+const DEF={sn:DEFSN.slice(),name:'タブレット1',role:'kake',mode:onGas||PRESET.gasUrl?'live':'test',split:true,gasUrl:PRESET.gasUrl,key:PRESET.key,etaMin:180,idleMin:15,scale:100};
+const firstRun=!load('settings',null);
 let S=Object.assign({},DEF,load('settings',{}));
+if(!S.gasUrl&&PRESET.gasUrl)S.gasUrl=PRESET.gasUrl;if(!S.key&&PRESET.key)S.key=PRESET.key;
 if(S.sn&&S.sn[0]==='段取り①')S.sn[0]=DEFSN[0];
 if(S.sn&&S.sn[2]==='段取り②')S.sn[2]=DEFSN[2];
 if(S.role==='kake')S.role='dan1';
@@ -992,6 +998,7 @@ function openSettings(){
   <div class="f"><label>品番マスタ</label><div><button class="btn sm" id="sTpl">ひな形（Excel）をつくる</button><input type="file" id="sCsv" accept=".xlsx,.csv,.txt" style="display:none">
     <div id="sDrop" class="drop"><b>ここにExcelをドラッグ＆ドロップ</b><small>（タッチして選ぶこともできます）</small></div>
     <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button></div></div>
+  <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
   <div class="f"><label>テストデータ</label><button class="btn sm" id="sClr">テストの記録を全部消す</button></div>
   <div class="foot"><button class="btn ghost" data-close>とじる</button><button class="btn fin" id="sSave">保存</button></div>`,()=>{
     $('#sSave').onclick=()=>{
@@ -1004,6 +1011,11 @@ function openSettings(){
     $('#sClr').onclick=()=>{if(confirm('テストの記録を全部消します。よいですか？')){save('jobs_test',{});sess=null;save('sess',null);loadJobs();closeModal();renderAll()}};
     $('#sGetM').onclick=async()=>{S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;$('#sGetM').textContent=(await fetchMaster())?'取得しました（'+master.length+'件）':'取得できませんでした'};
     $('#sTpl').onclick=()=>downloadMasterTpl();
+    $('#sDist').onclick=()=>{const u=$('#sUrl').value.trim()||S.gasUrl,k=$('#sKey').value;
+      if(!/^https:\/\/script\.google\.com\//.test(u)){alert('Apps Script URL（https://script.google.com/…/exec）を入れてください');return}
+      if(!k){alert('合言葉を入れてください');return}
+      const html='<!doctype html>\n'+SRC.replace(/const PRESET=\{[^}]*\};/,()=>'const PRESET='+JSON.stringify({gasUrl:u,key:k})+';');
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='生産管理しくみ_配布用_'+VER+'.html';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)};
     const importMaster=async f=>{if(!f)return;
       try{const rows=await readTable(f);const m=masterFromRows(rows);
         if(m.length){master=m;save('master',master);d1Built=false;pickCust=null;alert(m.length+' 件取り込みました')}else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
@@ -1123,7 +1135,7 @@ $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscree
 /* ====== 起動 ====== */
 loadJobs();layout();renderAll();tick();
 if(live()){flush();poll();fetchMaster()}
-if(onGas&&live()&&!S.key)setTimeout(openSettings,500);   /* Googleから初めて開いたタブレット：タブレット名・役割・合言葉を入れてもらう */
+if(live()&&(firstRun||!S.key))setTimeout(openSettings,500);   /* 初めて開いたタブレット（配布用ファイル・Google）：タブレット名・役割（・合言葉）を入れてもらう */
 </script>
 </body>
 </html>

@@ -4,6 +4,8 @@
 *管理シート*.xlsx
 *掛け置き*.xlsx
 *掛置き*.xlsx
+# 配布用ファイル（Apps Script URL と合言葉が入る）
+*配布用*.html
 # 作業用
 ~$*
 .DS_Store
