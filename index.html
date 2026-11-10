@@ -368,7 +368,7 @@ async function gas(method,params,body){
 }
 async function flush(){
   if(!live()||flushing)return;const ob=outbox(),ids=Object.keys(ob);
-  if(!ids.length){setNet(true);return}
+  if(!ids.length)return;   /* 送るものがないときは表示を変えない（つながっているかは受信で判断する） */
   flushing=true;
   try{
     await gas('POST',null,{action:'upsert',jobs:ids.map(i=>ob[i])});
