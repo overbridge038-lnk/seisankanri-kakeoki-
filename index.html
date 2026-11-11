@@ -172,6 +172,7 @@ main.four .now .hin{font-size:1.5rem}main.four .now .count b{font-size:3.2rem}
 .st3 span{display:block;font-weight:800;font-size:1.1rem}.st3 b{font-size:3.6rem;line-height:1.05;font-weight:900}.st3 small{font-size:1.3rem;font-weight:800}
 .btn.red{background:#dc2626;color:#fff}
 .rbtn{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.7rem}.rbtn .btn{min-height:4.2rem;font-size:1.3rem;line-height:1.2}.rbtn small{display:block;font-size:.9rem;font-weight:700;opacity:.9}
+.short{text-wrap:balance;margin-top:.7rem;padding:.5rem .8rem;border-radius:.7rem;background:var(--bad-bg);color:var(--bad);font-weight:800;font-size:1.05rem}.short b{font-size:1.4rem}
 .hand{margin-top:.7rem;border:2px solid #dc2626;border-radius:.8rem;padding:.7rem;background:#fef2f2}
 .reg{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:stretch}
 .reg .tp,.reg .rb{border:2px solid var(--line);border-radius:.9rem;padding:.4rem .5rem;display:flex;align-items:center;justify-content:center;gap:.35rem;flex-wrap:wrap}
@@ -250,7 +251,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-10g</span>
+    <span class="ver">ver 2026-11-11</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -287,7 +288,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-10g';
+const VER='2026-11-11';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -599,7 +600,7 @@ const FIXR=['不良','前工程の数が違う','ハンド入力'];
 const BACKR='検査用段取りへ戻す';   /* 修正記録(adj)の理由。これがあり、いま検査用段取りにいる品番は「戻り」 */
 const isBack=j=>stg(j)===2&&(j.adj||[]).some(a=>a[2]===BACKR);
 let insp=null;   // {id, hand:false, val, hist:[]}
-function openInsp(id){const j0=jobs[id];if(j0&&j0.pz){j0.pz=null;upsert(j0)}const nd=new Date();insp={id,hand:false,back:false,bv:1,bm:'',val:null,hist:[],open:Date.now(),si:null,t:{sH:nd.getHours(),sM:nd.getMinutes(),eH:nd.getHours(),eM:nd.getMinutes()},bx:null};openModal('<div id="inspBox"></div>',drawInsp)}
+function openInsp(id){const j0=jobs[id];if(j0&&j0.pz){j0.pz=null;upsert(j0)}const nd=new Date();insp={id,hand:false,back:false,short:false,bv:1,bm:'',val:null,hist:[],open:Date.now(),si:null,t:{sH:nd.getHours(),sM:nd.getMinutes(),eH:nd.getHours(),eM:nd.getMinutes()},bx:null};openModal('<div id="inspBox"></div>',drawInsp)}
 function inspDo(fn){const j=jobs[insp.id],prev=JSON.parse(JSON.stringify(j));insp.hist.push(prev);fn(j);
   if(remN(j)<=0&&j.st==='wait'){j.st='done';j.td=Date.now();upsert(j);closeModal();
     setTimeout(()=>toast('検査完了：'+j.hin+'（のこり0）',()=>{prev.u=Date.now();jobs[prev.id]=prev;upsert(prev)}),50);return true}
@@ -607,6 +608,8 @@ function inspDo(fn){const j=jobs[insp.id],prev=JSON.parse(JSON.stringify(j));ins
 function drawInsp(){
   const j=jobs[insp.id],box=$('#inspBox');if(!j||!box){closeModal();return}
   const r=remN(j);if(insp.bx==null||insp.bx>r)insp.bx=r;
+  /* はじめは「時間・処理した箱数・登録する」だけ。のこりより少なく登録したら（検査済みがあって、のこりがあるとき）、赤い3つと一時中断を出す */
+  const sh=r>0&&(insp.short||+j.ins>0);
   box.innerHTML=`<h3>${esc(j.hin)}　<span style="font-size:1rem;color:var(--mut)">到着予定 ${hm(j.eta)}　送信 ${fn(j.qty??j.n)}箱</span></h3>
     <div class="st3"><div class="c on"><span>のこり</span><b>${fn(r)}</b><small>箱</small></div><div class="c"><span>検査済み</span><b>${fn(j.ins||0)}</b><small>箱</small></div><div class="c"><span>全体</span><b>${fn(j.n)}</b><small>箱</small></div></div>
     <div class="reg">
@@ -615,7 +618,8 @@ function drawInsp(){
       <div class="rb"><span>処理した箱数</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="iBx" type="number" min="1" step="1" inputmode="numeric" value="${insp.bx}"><button class="btn ghost" data-bx="1">+1</button></div></div>
       <button class="btn insp" id="iReg" ${r>0?'':'disabled'}>登録する</button>
     </div>
-    <div class="rbtn">${FIXR.map(x=>`<button class="btn red" data-fr="${esc(x)}" ${x!=='ハンド入力'&&r<=0?'disabled':''}>${esc(x)}${x!=='ハンド入力'?'<small>−1箱</small>':'<small>数を直す</small>'}</button>`).join('')}</div>
+    ${sh?`<div class="short">のこり <b>${fn(r)}</b>箱：足りない理由を下から選んでください</div>
+    <div class="rbtn">${FIXR.map(x=>`<button class="btn red" data-fr="${esc(x)}">${esc(x)}${x!=='ハンド入力'?`<small>のこり ${fn(r)}箱を記録</small>`:'<small>正しい のこりを入れる</small>'}</button>`).join('')}</div>`:''}
     ${insp.hand?`<div class="hand"><b>ハンド入力：正しい のこり箱数</b>
       <div class="fx"><button class="btn ghost" data-fv="-1">−1</button><input id="iVal" type="number" min="0" step="1" inputmode="numeric" value="${insp.val}"><button class="btn ghost" data-fv="1">+1</button></div>
       <input id="iMemo" placeholder="コメント（例：数え直し、箱の入れ違い など）" value="${esc(insp.memo||'')}" style="width:100%;margin-top:.6rem;font-size:1.2rem">
@@ -624,7 +628,7 @@ function drawInsp(){
       <div class="fx"><button class="btn ghost" data-bv="-1">−1</button><input id="bVal" type="number" min="1" step="1" inputmode="numeric" value="${insp.bv}"><button class="btn ghost" data-bv="1">+1</button></div>
       <input id="bMemo" value="${esc(insp.bm)}" placeholder="理由（例：箱数のまちがい）" style="width:100%;margin-top:.6rem;font-size:1.2rem">
       <div class="foot"><button class="btn ghost" id="bCan">やめる</button><button class="btn red" id="bOk">${esc(SN(2))}へ戻す</button></div></div>`:''}
-    <div class="foot"><button class="btn ghost" id="iBack" style="margin-right:auto">${esc(SN(2))}へ戻す</button><button class="btn pause" id="iPause" ${r>0?'':'disabled'}>一時中断（あとで続ける）</button><button class="btn ghost" data-close>とじる</button></div>`;
+    <div class="foot"><button class="btn ghost" id="iBack" style="margin-right:auto">${esc(SN(2))}へ戻す</button>${sh?'<button class="btn pause" id="iPause">一時中断（あとで続ける）</button>':''}<button class="btn ghost" data-close>とじる</button></div>`;
   /* 前工程（検査用段取り）へ戻す：箱数が違うときなど。正しい箱数を入れて戻すと、検査用段取りの一覧に「戻り」の印つきで出る */
   $('#iBack').onclick=()=>{insp.back=!insp.back;insp.hand=false;insp.bv=r>0?r:(+j.n||1);insp.bm='箱数のまちがい';drawInsp()};
   if(insp.back){
@@ -641,7 +645,7 @@ function drawInsp(){
       closeModal();upsert(j);beep(500,.12,1);
       toast(j.hin+'：'+SN(2)+'へ戻しました（'+v+'箱）',()=>{prev.u=Date.now();jobs[prev.id]=prev;upsert(prev)})};
   }
-  $('#iPause').onclick=()=>{const now=Date.now();if(insp.si!=null&&j.ses&&j.ses[insp.si])j.ses[insp.si][1]=now;j.pz=now;j.paus=(j.paus||[]).concat([[now,S.name]]);closeModal();upsert(j);toast(j.hin+'：一時中断（のこり '+fn(r)+'箱）')};
+  const pzB=$('#iPause');if(pzB)pzB.onclick=()=>{const now=Date.now();if(insp.si!=null&&j.ses&&j.ses[insp.si])j.ses[insp.si][1]=now;j.pz=now;j.paus=(j.paus||[]).concat([[now,S.name]]);closeModal();upsert(j);toast(j.hin+'：一時中断（のこり '+fn(r)+'箱）')};
   /* 時間はクルクル（ホイール）で設定。処理した箱数を入れて登録 → のこりが減る */
   box.querySelectorAll('.wh').forEach(w=>{const k=w.dataset.k,max=k.endsWith('H')?23:59;
     w.innerHTML='<div class="wi"></div>'+Array.from({length:max+1},(_,v)=>`<div class="wi">${pad(v)}</div>`).join('')+'<div class="wi"></div>';
@@ -664,13 +668,14 @@ function drawInsp(){
     if(bx>r){alert('のこり '+fn(r)+'箱より多いです。数が違うときは「ハンド入力」で直してください');return}
     const prev=JSON.parse(JSON.stringify(j));
     if(inspDo(j=>{j.ins=(+j.ins||0)+bx;j.tab3=S.name;j.ses=(j.ses||[]).concat([[st,en,bx]])}))return;
-    insp.t.sH=insp.t.eH;insp.t.sM=insp.t.eM;insp.bx=null;drawInsp();beep(1500,.08,1);
+    insp.t.sH=insp.t.eH;insp.t.sM=insp.t.eM;insp.bx=null;insp.short=true;drawInsp();beep(1500,.08,1);
     toast(j.hin+'：'+hm(st)+'～'+hm(en)+'　'+bx+'箱を登録しました',()=>{prev.u=Date.now();jobs[prev.id]=prev;upsert(prev);if($('#inspBox'))drawInsp()});
   };
   box.querySelectorAll('[data-fr]').forEach(b=>b.onclick=()=>{
     const x=b.dataset.fr;
     if(x==='ハンド入力'){insp.hand=!insp.hand;insp.back=false;insp.val=r;insp.memo='';drawInsp();return}
-    if(inspDo(j=>{j.n=(+j.n||0)-1;j.adj=(j.adj||[]).concat([[Date.now(),-1,x,'',S.name]])}))return;beep(500,.12,1);toast(j.hin+'：'+x+'　−1箱（記録しました）');
+    /* 不良・前工程の数が違う：のこり全部をその理由にして記録 → のこり0で検査完了（9秒は取り消せる） */
+    if(inspDo(j=>{j.n=r2((+j.n||0)-r);j.adj=(j.adj||[]).concat([[Date.now(),-r,x,'',S.name]])}))return;beep(500,.12,1);toast(j.hin+'：'+x+'　−'+fn(r)+'箱（記録しました）');
   });
   if(insp.hand){
     box.querySelectorAll('[data-fv]').forEach(b=>b.onclick=()=>{insp.val=Math.max(0,(+$('#iVal').value||0)+(+b.dataset.fv));$('#iVal').value=insp.val});
