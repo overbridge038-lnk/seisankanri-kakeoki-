@@ -300,7 +300,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12o</span>
+    <span class="ver">ver 2026-11-12p</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -340,7 +340,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12o';
+const VER='2026-11-12p';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -674,13 +674,6 @@ function kakeRegister({part,n,start,end,ex}){
   toast(String(part).trim()+' '+n+'箱を'+SN(2)+'へ送りました'+(ex?'（突発）':''));
 }
 const kakeRange=j=>{const k=j.kb&&j.kb[0];return k&&k.length===2&&k[0]&&k[1]?[k[0],k[1]]:[j.t0,j.t1]};   /* 掛けの開始・終了（入力欄から送ったものは 入力開始〜送信） */
-/* リミット表のカードをタップ → 掛けの画面に切りかえて、その品番を入力欄に入れる */
-function goKake(key){
-  const u=limit&&limitModel().units[key];if(!u)return;
-  if(!showDan1()){toast('この端末には、'+SN(0)+'の画面がありません');return}
-  view='main';layout();renderHeader();renderAll();pickItem(u.part);
-  const pn=$('#paneDan1');if(pn&&pn.scrollIntoView)pn.scrollIntoView({block:'start'});
-}
 /* 優先順番：リミット表の品番の一覧（のこり数量は出さない）。済は下に分けて残す */
 function openKakePri(){
   openModal(`<h3>優先順番<span class="hint" style="display:block;font-weight:600">リミットの早い順。品番をタップして登録</span></h3>
@@ -1138,7 +1131,7 @@ function renderLimit(){
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
    ${late.length?`<div class="lp" style="border-color:var(--bad)"><div class="t" style="color:var(--bad)">遅れ ${late.length} 件<span class="hint">　リミット時刻を過ぎて、まだ送信していない品番</span></div>
      <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(llabel(x.it))}</span>`).join('')}</div></div>`:''}
-   <div class="hint">品番をタップ → ${esc(SN(0))}の入力欄にその品番が入ります（1回送ると「済」）。赤＝リミット時刻を過ぎて未完了</div>
+   <div class="hint">品番をタップ → ${esc(SN(0))}の登録画面（掛けの開始・終了と箱数）が開きます（1回送ると「済」）。赤＝リミット時刻を過ぎて未完了</div>
    <div class="row" style="align-items:center;gap:.5rem"><button class="btn sm" id="lPrev">前日の配置に戻す</button><button class="btn sm" id="lSavePrev">今の配置を保存</button><button class="btn sm" id="lReset">Excelの並びに戻す</button>${m.removed.length?`<button class="btn sm" id="lRem">外した品番（${m.removed.length}）</button>`:''}<span class="lzoom"><button class="btn sm" id="lzOut" aria-label="縮小">－</button><span id="lzLbl">100%</span><button class="btn sm" id="lzIn" aria-label="拡大">＋</button><button class="btn sm" id="lzFit">全体</button></span><button class="btn ok" id="lXlsx" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button></div>
    <div class="hint">${esc(lePrevLabel())}</div>
    <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力</div>
@@ -1334,7 +1327,7 @@ function exportLimitXlsx(){
   t.addEventListener('touchend',e=>{if(lpinch&&e.touches.length<2){lpinch=null;save('limitZoom',limitZoom)}});
   t.addEventListener('click',e=>{
     if(performance.now()-ljust<500)return;
-    const li=e.target.closest('.li[data-li]');if(li){goKake(li.dataset.li);return}
+    const li=e.target.closest('.li[data-li]');if(li){openKake(li.dataset.li);return}
     if(e.target.closest('#lReset')){if(confirm('並び順・外した品番・分割を、Excelから取り込んだときの元の状態に戻しますか？\n（手入力した品番は残ります）'))leReset();return}
     if(e.target.closest('#lRem')){openLimitRemoved();return}
     if(e.target.closest('#lPrev')){openLimitPrev();return}
