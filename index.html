@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>生産管理しくみ</title>
+<script>/* 見張り役：画面のプログラムが読めないエラーで止まったら、場所と前後の文字を赤い枠で知らせる（自働化：異常で知らせる） */
+window.addEventListener('error',function(e){try{if(window.__appOk)return;var n=e.lineno||0,sc=[].slice.call(document.scripts).sort(function(x,y){return y.text.length-x.text.length})[0],src=(sc?sc.text:'').split('\n'),out=[];   /* 行は「<script>」の行を1行目として数える */
+  for(var i=Math.max(0,n-4);i<Math.min(src.length,n+2);i++)out.push((i+1===n?'>>':'  ')+(i+1)+': '+src[i].slice(0,300));
+  var d=document.createElement('pre');d.style.cssText='position:fixed;left:0;right:0;bottom:0;max-height:60vh;overflow:auto;z-index:99999;margin:0;padding:10px;background:#fee2e2;color:#7f1d1d;border-top:4px solid #b91c1c;font:12px/1.4 monospace;white-space:pre-wrap';
+  d.textContent='画面のプログラムでエラーが出ました。この赤い枠の写真を送ってください\n'+(e.message||'')+'  （'+n+'行 '+(e.colno||'')+'文字目）\n\n'+out.join('\n');
+  (document.body||document.documentElement).appendChild(d)}catch(x){}});
+</script>
 <style>
 :root{--bg:#eef2f6;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#cbd5e1;
 --kake:#1d4ed8;--kake-bg:#dbeafe;--kensa:#15803d;--kensa-bg:#dcfce7;
@@ -293,7 +300,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12l</span>
+    <span class="ver">ver 2026-11-12m</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -333,7 +340,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12l';
+const VER='2026-11-12m';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1866,7 +1873,7 @@ $('#btnRef').onclick=async()=>{
 $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
 
 /* ====== 起動 ====== */
-loadJobs();layout();renderAll();tick();renderHist();
+loadJobs();layout();renderAll();tick();renderHist();window.__appOk=true;
 if(live()){flush();poll();fetchMaster().then(ok=>{if(ok)renderAll()})}   /* 品番マスタを読んだら客先のボタンを描き直す */
 if(live()&&(firstRun||!S.key))setTimeout(openSettings,500);   /* 初めて開いたタブレット（配布用ファイル・Google）：タブレット名・役割（・合言葉）を入れてもらう */
 </script>
