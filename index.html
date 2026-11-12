@@ -245,9 +245,19 @@ table.lt{width:auto;min-width:100%;font-size:.95rem}.lt th{position:sticky;top:0
 .lt td{vertical-align:top;padding:.25rem;min-width:7.2rem}.lt td.ar{min-width:3rem;font-weight:900;font-size:1.2rem;text-align:center;background:#f1f5f9;position:sticky;left:0}
 .li{display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:.5rem;background:#fff;padding:.25rem .45rem;margin-bottom:.25rem;cursor:pointer;font-weight:900;font-size:1.05rem;line-height:1.25}
 .li small{display:block;font-weight:600;font-size:.75rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li.hand{background:#e8f0fe;border-color:#1a73e8;color:#1a4fa0}.li.hand small{color:#3b5fa8}
 .li.done{background:var(--kensa-bg);border-color:var(--kensa);color:#14532d}.li.done small{color:#166534}
 .li.late{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}.li.late small{color:var(--bad)}
 .li.nop{opacity:.45;font-weight:700}
+.li{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.li.sp{border-left:6px solid #eab308}.li .pc{display:inline-block;margin-left:.35rem;padding:0 .35rem;border-radius:.3rem;background:var(--kake);color:#fff;font-size:.75rem;font-weight:800;vertical-align:middle}
+.li .hb{display:inline-block;margin-left:.35rem;padding:0 .35rem;border-radius:.3rem;background:#1a73e8;color:#fff;font-size:.7rem;font-weight:800;vertical-align:middle}
+.li.dragging{opacity:.35}.li.ins-before{box-shadow:0 -5px 0 0 #1a73e8}.li.ins-after{box-shadow:0 5px 0 0 #1a73e8}.lt td.ins-empty{background:#dbeafe}
+.lt th small{display:block;font-weight:600;font-size:.7rem;color:#475569;white-space:nowrap}.lt td[data-ai]{cursor:pointer}
+body.drag-on{user-select:none;-webkit-user-select:none}
+#lghost{display:none;position:fixed;z-index:60;pointer-events:none;background:#1a73e8;color:#fff;font-weight:800;font-size:1.1rem;padding:.5rem .9rem;border-radius:.6rem;box-shadow:0 6px 16px rgba(0,0,0,.3)}#lghost.del{background:var(--bad)}
+#ltrash{display:none;position:fixed;z-index:60;left:50%;bottom:1.1rem;transform:translateX(-50%);align-items:center;gap:.6rem;padding:.8rem 1.6rem;border-radius:3rem;background:#fff;border:3px dashed var(--bad);color:var(--bad);font-size:1.9rem;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#ltrash span{font-size:1rem}body.drag-on #ltrash{display:flex}#ltrash.over{background:var(--bad);color:#fff;border-style:solid;transform:translateX(-50%) scale(1.1)}
 </style>
 </head>
 <body>
@@ -267,7 +277,7 @@ table.lt{width:auto;min-width:100%;font-size:.95rem}.lt th{position:sticky;top:0
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12c</span>
+    <span class="ver">ver 2026-11-12d</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -297,6 +307,7 @@ table.lt{width:auto;min-width:100%;font-size:.95rem}.lt th{position:sticky;top:0
   </main>
 </div>
 <div id="modal"><div class="dlg" id="dlg"></div></div>
+<div id="lghost"></div><div id="ltrash">🗑<span>ここで離すと外す（生産がないとき）</span></div>
 <div id="toast"><span id="toastMsg"></span><button id="toastUndo">取り消す</button></div>
 <div id="andon"><h2>呼び出し</h2><div class="anl" id="anList"></div></div>
 <div id="start"><div>画面をタッチして開始<div style="font-size:1.1rem;font-weight:600;margin-top:.8rem">（呼び出しの音を鳴らすために必要です）</div></div></div>
@@ -305,7 +316,7 @@ table.lt{width:auto;min-width:100%;font-size:.95rem}.lt th{position:sticky;top:0
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12c';
+const VER='2026-11-12d';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -832,37 +843,80 @@ function limitFromRows(rows){
   return limitCount(L)?L:null;
 }
 const hm0=m=>Math.floor(m/60)+':'+pad(m%60);
-/* 計画の各品番に、今日の送信（job）を割り当てる。戻り値：[{ai,ti,i,it,job,late,nop}] */
+/* ===== リミット表の編集：並べ替え・分割・外す・手入力 =====
+   全端末で同じになるよう、stage 10 の記録1件（id=LE-<計画の目印>）の kb に保存する（Code.gs の変更はいらない・実績には出ない）。
+   {order:[エリア][時刻]=[札のkey], removed:[key], splits:{元のkey:2〜4}, added:{key:{part,h,hanger,qty,ai,ti}}}
+   札のkey：Excelの品番＝「エリア|時刻|品番|同じ品番の何番目」／分割した札＝「元のkey#1/2」／手入力＝「add:…」 */
+const limitId=L=>{let h=5381;const t=JSON.stringify([L.times,L.areas]);for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)};
+const leId=()=>{if(!limit)return null;if(!limit.id)limit.id=limitId(limit);return 'LE-'+limit.id};
+const leGet=()=>{const d=jobs[leId()],k=d&&d.kb;return k&&!Array.isArray(k)?k:{}};
+const pcKeys=(k,n)=>Array.from({length:n},(x,i)=>k+'#'+(i+1)+'/'+n);
+/* 分割した札：必要時間は0.1h単位、必要数は1単位で繰り上げ（0.1h未満は0.1h） */
+const lpiece=(it,i,n,key)=>{const h=it.h>0?Math.max(.1,Math.ceil(it.h/n*10-1e-9)/10):0;return Object.assign({},it,{key,base:it.key,piece:i+'/'+n,h,qty:typeof it.qty==='number'?Math.ceil(it.qty/n-1e-9):it.qty})};
+const lwhere=(o,k)=>{let w=null;o.forEach((cols,a)=>cols.forEach((l,t)=>{const j=l.indexOf(k);if(j>=0)w={a,t,j}}));return w};
+const llabel=u=>u.part+(u.piece?'（'+u.piece+'）':'');
+function limitModel(){
+  const E=leGet(),T=limit.times,base={},bo=limit.areas.map(()=>T.map(()=>[]));
+  limit.areas.forEach((a,ai)=>a.cols.forEach((c,ti)=>{const seen={};c.forEach(it=>{const n=seen[it.part]=(seen[it.part]||0)+1,k=a.area+'|'+T[ti]+'|'+it.part+'|'+(n-1);
+    base[k]={key:k,part:it.part,h:parseFloat(String(it.hours).replace(/[^\d.]/g,''))||0,hanger:it.hanger,qty:it.qty,ai,ti};bo[ai][ti].push(k)})}));
+  const ad=E.added||{};Object.keys(ad).forEach(k=>{const a=ad[k];
+    if(a&&a.part&&limit.areas[a.ai]&&a.ti>=0&&a.ti<T.length){base[k]={key:k,part:a.part,h:+a.h||0,hanger:a.hanger||'',qty:a.qty===''||a.qty==null?'':+a.qty,hand:true,ai:a.ai,ti:a.ti};bo[a.ai][a.ti].push(k)}});
+  const splits={};Object.keys(E.splits||{}).forEach(k=>{const n=E.splits[k];if(base[k]&&n>=2&&n<=4)splits[k]=n});
+  const units={},unitsOf=k=>splits[k]?pcKeys(k,splits[k]):[k];
+  Object.keys(base).forEach(k=>{if(splits[k])unitsOf(k).forEach((u,i)=>units[u]=lpiece(base[k],i+1,splits[k],u));else units[k]=base[k]});
+  const used=new Set(),removed=[];(E.removed||[]).forEach(k=>{if(units[k]&&!units[k].hand&&!used.has(k)){used.add(k);removed.push(k)}});
+  const order=limit.areas.map((a,ai)=>T.map((t,ti)=>{const l=(E.order&&E.order[ai]&&E.order[ai][ti])||[];return l.filter(k=>units[k]&&!used.has(k)&&used.add(k))}));
+  /* 保存した並びにない札（Excelの元の並び・分割した札・戻した札）は、元の場所の最後へ */
+  bo.forEach((cols,ai)=>cols.forEach((l,ti)=>l.forEach(bk=>unitsOf(bk).forEach(u=>{if(!used.has(u)){order[ai][ti].push(u);used.add(u)}}))));
+  return{base,units,order,removed,splits};
+}
+function leEdit(fn){
+  const m=limitModel(),E={order:m.order.map(c=>c.map(l=>l.slice())),removed:m.removed.slice(),splits:Object.assign({},m.splits),added:JSON.parse(JSON.stringify(leGet().added||{}))};
+  const before=JSON.stringify(E);fn(E,m);if(JSON.stringify(E)===before)return;
+  const id=leId(),cur=jobs[id]?JSON.parse(JSON.stringify(jobs[id])):{id,tab:S.name,hin:'リミット表の編集',sei:'',maker:'',qty:null,n:0,nq:0,ins:0,t0:null,t1:null,eta:null,stage:10,st:'wait',tp:Date.now(),kb:{}};
+  cur.kb=E;cur.tab=S.name;upsert(cur);
+}
+function leMove(k,ai,ti,pos){leEdit(E=>{const f=lwhere(E.order,k);if(!f)return;if(f.a===ai&&f.t===ti&&f.j<pos)pos--;E.order[f.a][f.t].splice(f.j,1);E.order[ai][ti].splice(pos,0,k)})}
+function leRemove(k){leEdit((E,m)=>{const w=lwhere(E.order,k);if(w)E.order[w.a][w.t].splice(w.j,1);if(m.units[k]&&m.units[k].hand)delete E.added[k];else E.removed.push(k)})}
+function leRestore(k){leEdit(E=>{E.removed=E.removed.filter(x=>x!==k)})}
+function leSplit(k,n){leEdit(E=>{const w=lwhere(E.order,k);if(!w)return;E.splits[k]=n;E.order[w.a][w.t].splice(w.j,1,...pcKeys(k,n))})}
+function leUnsplit(pk,bk){leEdit(E=>{const ps=pcKeys(bk,E.splits[bk]||0);ps.forEach(u=>{if(u!==pk){const x=lwhere(E.order,u);if(x)E.order[x.a][x.t].splice(x.j,1)}});
+  const at=lwhere(E.order,pk);if(at)E.order[at.a][at.t].splice(at.j,1,bk);E.removed=E.removed.filter(u=>ps.indexOf(u)<0);delete E.splits[bk]})}
+function leReset(){leEdit(E=>{E.order=E.order.map(c=>c.map(()=>[]));E.removed=[];E.splits={}})}   /* 手入力した品番は残す（元の場所へ） */
+/* 計画の各品番（札）に、今日の送信（job）を割り当てる。戻り値：[{ai,ti,i,key,it,job,late,nop}] */
 function limitState(){
   if(!limit)return[];
-  const td=ymd(Date.now()),nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),q={};
+  const m=limitModel(),td=ymd(Date.now()),nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),q={};
   Object.values(jobs).filter(j=>j.t1&&!j.only&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));
-  const L=[];limit.areas.forEach((a,ai)=>a.cols.forEach((c,ti)=>c.forEach((it,i)=>L.push({ai,ti,i,it}))));
-  L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{const k=q[nh(x.it.part)];x.job=k&&k.length?k.shift():null;x.nop=!(x.it.qty>0);x.late=!x.job&&!x.nop&&nowM>limit.times[x.ti]});
-  return L;
+  const L=[];m.order.forEach((cols,ai)=>cols.forEach((list,ti)=>list.forEach((k,i)=>L.push({ai,ti,i,key:k,it:m.units[k]}))));
+  L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{const k=q[nh(x.it.part)];x.job=k&&k.length?k.shift():null;x.nop=!(x.it.qty>0)&&!x.it.hand;x.late=!x.job&&!x.nop&&nowM>limit.times[x.ti]});
+  L.model=m;return L;
 }
 function renderLimit(){
-  const b=$('#limitBody');if(!b)return;
+  const b=$('#limitBody');if(!b||(ldrag&&ldrag.on))return;
   if(!limit){b.innerHTML='<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
-  const L=limitState(),need=L.filter(x=>!x.nop||x.job),done=need.filter(x=>x.job),late=L.filter(x=>x.late);
+  const L=limitState(),m=L.model,need=L.filter(x=>!x.nop||x.job),done=need.filter(x=>x.job),late=L.filter(x=>x.late);
   const nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),pc=need.length?Math.round(done.length/need.length*100):0;
   const nx=limit.times.findIndex(t=>t>=nowM);
   const ach=limit.areas.map((a,ai)=>{const n=need.filter(x=>x.ai===ai),d=n.filter(x=>x.job).length,lt=late.filter(x=>x.ai===ai).length;
     return `<span class="${n.length&&d===n.length?'all':lt?'late':''}">${esc(a.area)} ${d}/${n.length}${lt?'　遅れ'+lt:''}</span>`}).join('');
   const cell=x=>{const it=x.it,j=x.job;
-    return `<button class="li ${j?'done':x.late?'late':x.nop?'nop':''}" data-li="${x.ai}|${x.ti}|${x.i}">${j?'済 ':''}${esc(it.part)}<small>${j?fn(j.qty??j.n)+'箱　'+hm(j.t1)+' 送信':x.nop?'生産なし':esc(it.hanger)+'　必要数 '+it.qty}</small></button>`};
+    return `<button class="li ${j?'done':x.late?'late':x.nop?'nop':''}${it.hand?' hand':''}${it.piece?' sp':''}" data-li="${esc(x.key)}">${j?'済 ':''}${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}<small>${j?fn(j.qty??j.n)+'箱　'+hm(j.t1)+' 送信':x.nop?'生産なし':esc(it.hanger)+'　必要数 '+(it.qty===''?'―':it.qty)}</small></button>`};
+  const colT=limit.times.map((t,ti)=>{const l=L.filter(x=>x.ti===ti);return{h:l.reduce((a,x)=>a+(x.it.h||0),0),n:l.length}});
   b.innerHTML=`<div class="lp"><div class="t">${esc(limit.title||'リミット表')}　今日の進み具合 <b>${done.length}</b> / ${need.length} 件（${pc}%）</div>
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
    ${late.length?`<div class="lp" style="border-color:var(--bad)"><div class="t" style="color:var(--bad)">遅れ ${late.length} 件<span class="hint">　リミット時刻を過ぎて、まだ送信していない品番</span></div>
-     <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(x.it.part)}</span>`).join('')}</div></div>`:''}
+     <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(llabel(x.it))}</span>`).join('')}</div></div>`:''}
    <div class="hint">品番をタップ → 箱数を入れて「送信」で済になります（${esc(SN(0))}の画面から送信しても、自動で済が付きます）。赤＝リミット時刻を過ぎて未完了</div>
-   <div class="lwrap"><table class="lt"><tr><th>エリア</th>${limit.times.map((t,i)=>`<th class="${i===nx?'now':''}">${hm0(t)}</th>`).join('')}</tr>
-   ${limit.areas.map((a,ai)=>`<tr><td class="ar">${esc(a.area)}</td>${limit.times.map((t,ti)=>`<td>${L.filter(x=>x.ai===ai&&x.ti===ti).map(cell).join('')}</td>`).join('')}</tr>`).join('')}</table></div>`;
+   <div class="row" style="align-items:center;gap:.5rem"><button class="btn sm" id="lReset">並び順を元に戻す</button>${m.removed.length?`<button class="btn sm" id="lRem">外した品番（${m.removed.length}）</button>`:''}</div>
+   <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力</div>
+   <div class="lwrap"><table class="lt"><tr><th>エリア</th>${limit.times.map((t,i)=>`<th class="${i===nx?'now':''}">${hm0(t)}<small>計 ${(Math.round(colT[i].h*10)/10).toFixed(1)}h（${colT[i].n}品番）</small></th>`).join('')}</tr>
+   ${limit.areas.map((a,ai)=>`<tr><td class="ar">${esc(a.area)}</td>${limit.times.map((t,ti)=>`<td data-ai="${ai}" data-ti="${ti}">${L.filter(x=>x.ai===ai&&x.ti===ti).map(cell).join('')}</td>`).join('')}</tr>`).join('')}</table></div>`;
 }
 function openLimitItem(key){
-  const [ai,ti,i]=key.split('|').map(Number),x=limitState().find(y=>y.ai===ai&&y.ti===ti&&y.i===i);if(!x)return;
-  const it=x.it,j=x.job,t0=Date.now(),head=`<h3>${esc(limit.areas[ai].area)}　リミット ${hm0(limit.times[ti])}</h3><div class="big">${esc(it.part)}</div>
-    <div style="color:var(--mut)">ハンガー ${esc(it.hanger||'―')}　／　必要時間 ${esc(it.hours||'―')}　／　必要数 ${it.qty}</div>`;
+  const x=limitState().find(y=>y.key===key);if(!x)return;
+  const it=x.it,j=x.job,t0=Date.now(),head=`<h3>${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}</h3><div class="big">${esc(llabel(it))}</div>
+    <div style="color:var(--mut)">ハンガー ${esc(it.hanger||'―')}　／　必要時間 (${(it.h||0).toFixed(1)}h)　／　必要数 ${it.qty===''?'―':it.qty}</div>`;
   if(j){openModal(head+`<div class="msgok" style="margin-top:.7rem;font-size:1.3rem;font-weight:900;color:var(--kensa)">済　${fn(j.qty??j.n)}箱　${hm(j.t1)} 送信（${esc(j.tab||'')}）</div><div class="foot"><button class="btn ghost" data-close>とじる</button></div>`);return}
   openModal(head+`<div class="hr" style="margin-top:.7rem"><label class="w">箱数（かんばん枚数）<input id="lBox" type="number" min="1" step="1" inputmode="numeric"></label></div>
     <div class="foot"><button class="btn ghost" data-close>もどる</button><button class="btn ok" id="lOk">送信（${esc(SN(2))}へ）</button></div>`,()=>{
@@ -874,6 +928,119 @@ function openLimitItem(key){
       toast(it.part+' '+n+'箱を'+SN(2)+'へ送りました',()=>{const k=jobs[id];if(k){k.st='cancel';upsert(k)}})};
   });
 }
+/* ---- 分割の画面・手入力の画面・外した品番の画面 ---- */
+let lopenedAt=0;const ltooSoon=()=>performance.now()-lopenedAt<400;   /* 長押しの指を離した直後の押しまちがい防止 */
+function openLimitSplit(k){
+  const u=limitModel().units[k];if(!u)return;
+  const body=u.piece
+    ?`<div class="rsn" style="grid-template-columns:1fr"><button class="btn end" data-un="1">分割をやめる（元の1つに戻す）</button></div><div class="dnote">分けた札をまとめて、元の1つに戻します（この札の場所に戻ります）。</div>`
+    :`<div class="rsn" style="grid-template-columns:repeat(3,1fr)">${[2,3,4].map(n=>`<button class="btn end" data-n="${n}">${n}分割</button>`).join('')}</div>${u.hand?'<div class="foot" style="justify-content:flex-start"><button class="btn sm" data-ed="1">内容を直す</button></div>':''}
+      <div class="dnote">必要時間と必要数を分割数で割って繰り上げます（必要時間は0.1h単位、必要数は1単位）。分けた札は1つずつ、長押しで別の時刻へ動かせます。1つ送信するごとに、札が1つずつ済になります。</div>`;
+  openModal(`<h3>${esc(llabel(u))}</h3>${body}<div class="foot"><button class="btn ghost" data-close>とじる</button></div>`,()=>{
+    lopenedAt=performance.now();const d=$('#dlg');
+    d.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{if(ltooSoon())return;closeModal();leSplit(k,+b.dataset.n)});
+    d.querySelectorAll('[data-un]').forEach(b=>b.onclick=()=>{if(ltooSoon())return;closeModal();leUnsplit(k,u.base)});
+    d.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{if(ltooSoon())return;closeModal();openLimitForm({k:u.key})});
+  });
+}
+function openLimitForm(t){
+  const ad=leGet().added||{},a=t.k?ad[t.k]:{part:'',h:'',hanger:'',qty:'',ai:t.ai,ti:t.ti};if(!a)return;
+  openModal(`<h3>${t.k?'内容を直す':'品番を手入力'}（${esc(limit.areas[a.ai].area)}　${hm0(limit.times[a.ti])}）</h3>
+    <div class="hr" style="margin-top:.4rem"><label class="w">品番（名称）<input id="fPart" autocomplete="off" autocapitalize="characters" value="${esc(a.part)}" placeholder="例：12345-67890"></label>
+    <label class="w">必要時間（h）<input id="fH" type="number" inputmode="decimal" step="0.1" min="0" value="${esc(a.h)}" placeholder="例：0.5"></label>
+    <label class="w">ハンガー<input id="fHanger" autocomplete="off" value="${esc(a.hanger)}" placeholder="例：4段"></label>
+    <label class="w">必要数<input id="fQty" type="number" inputmode="numeric" step="1" min="0" value="${esc(a.qty)}" placeholder="例：10"></label></div>
+    <div id="fMsg" style="color:var(--bad);font-weight:800;min-height:1.4rem"></div>
+    <div class="foot"><button class="btn ghost" data-close>やめる</button><button class="btn ok" id="fOk">${t.k?'直す':'追加する'}</button></div>`,()=>{
+    lopenedAt=performance.now();setTimeout(()=>{const e=$('#fPart');if(e)e.focus()},50);
+    $('#fOk').onclick=()=>{if(ltooSoon())return;
+      const part=$('#fPart').value.normalize('NFKC').trim(),hs=$('#fH').value.trim(),qs=$('#fQty').value.trim(),msg=m=>{$('#fMsg').textContent=m};
+      if(!part){msg('品番（名称）を入れてください');return}
+      if(hs===''||isNaN(+hs)||+hs<0||+hs>24){msg('必要時間を 0〜24 の数で入れてください（例：0.5）');return}
+      if(qs!==''&&(isNaN(+qs)||+qs<0||Math.floor(+qs)!==+qs)){msg('必要数は 0 以上の整数で入れてください');return}
+      const rec={part,h:Math.round(+hs*10)/10,hanger:$('#fHanger').value.trim(),qty:qs===''?'':+qs};
+      closeModal();
+      if(t.k)leEdit(E=>{Object.assign(E.added[t.k],rec)});
+      else{const k='add:'+Date.now().toString(36)+Math.random().toString(36).slice(2,4);leEdit(E=>{E.added[k]=Object.assign(rec,{ai:t.ai,ti:t.ti});E.order[t.ai][t.ti].push(k)})}};
+  });
+}
+function openLimitRemoved(){
+  const m=limitModel();if(!m.removed.length)return;
+  openModal(`<h3>外した品番</h3><div class="hint">「戻す」で、元のエリア・時刻の最後に戻します</div>
+    ${m.removed.map(k=>{const u=m.units[k],bk=m.base[u.base||k];return `<div class="sent" style="margin:.3rem 0"><div style="gap:.6rem"><b>${esc(llabel(u))}</b><span style="color:var(--mut)">${esc(limit.areas[bk.ai].area)}　${hm0(limit.times[bk.ti])}</span><button class="btn sm" data-rs="${esc(k)}" style="min-height:2.4rem">戻す</button></div></div>`}).join('')}
+    <div class="foot"><button class="btn ghost" data-close>とじる</button></div>`,()=>{
+    lopenedAt=performance.now();
+    $('#dlg').querySelectorAll('[data-rs]').forEach(b=>b.onclick=()=>{if(ltooSoon())return;closeModal();leRestore(b.dataset.rs);if(m.removed.length>1)setTimeout(openLimitRemoved,60)});
+  });
+}
+/* ---- 長押し → ドラッグで並べ替え（前後・別のエリア・別のリミット時刻の列へ）／ゴミ箱で外す／動かさずに離すと分割 ---- */
+let lpress=null,ldrag=null,ljust=-1e9;   /* ljust＝ドラッグを終えた時刻（performance.now）。直後のタップは受けつけない */
+const lpt=e=>e.touches?e.touches[0]||e.changedTouches[0]:e;
+const lclear=()=>document.querySelectorAll('#limitBody .ins-before,#limitBody .ins-after,#limitBody .ins-empty,#limitBody .dragging').forEach(x=>x.classList.remove('ins-before','ins-after','ins-empty','dragging'));
+function lstart(e){
+  if(view!=='limit'||modalOpen||(e.button!=null&&e.button>0))return;
+  if(e.touches&&e.touches.length>1){if(lpress)clearTimeout(lpress.timer);lpress=null;return}   /* 2本指は拡大・縮小 */
+  const li=e.target.closest('.li[data-li]');if(!li)return;const p=lpt(e);
+  lpress={k:li.dataset.li,x:p.clientX,y:p.clientY,timer:setTimeout(()=>lbegin(li),450)};
+}
+function lbegin(li){
+  if(!lpress||!li.isConnected){lpress=null;return}
+  const k=lpress.k;ldrag={k,on:true,x:lpress.x,y:lpress.y,moved:false,target:null};
+  if(navigator.vibrate)navigator.vibrate(30);
+  li.classList.add('dragging');const g=$('#lghost'),u=limitModel().units[k];g.textContent=u?llabel(u):k;g.style.display='block';lghostAt(lpress.x,lpress.y);
+  document.body.classList.add('drag-on');
+}
+const lghostAt=(x,y)=>{const g=$('#lghost');g.style.left=(x+12)+'px';g.style.top=(y-36)+'px'};
+function lmove(e){
+  if(!lpress)return;const p=lpt(e);
+  if(!ldrag){if(Math.hypot(p.clientX-lpress.x,p.clientY-lpress.y)>10){clearTimeout(lpress.timer);lpress=null}return}   /* 長押しの前に指が動いたらスクロール */
+  e.preventDefault();
+  if(!ldrag.moved&&Math.hypot(p.clientX-ldrag.x,p.clientY-ldrag.y)>10)ldrag.moved=true;
+  lghostAt(p.clientX,p.clientY);
+  const g=$('#lghost'),at=()=>{g.style.display='none';const el=document.elementFromPoint(p.clientX,p.clientY);g.style.display='block';return el};
+  const over=at(),tr=$('#ltrash');
+  document.querySelectorAll('#limitBody .ins-before,#limitBody .ins-after,#limitBody .ins-empty').forEach(x=>x.classList.remove('ins-before','ins-after','ins-empty'));
+  if(over&&over.closest&&over.closest('#ltrash')){tr.classList.add('over');g.classList.add('del');ldrag.target={trash:true};return}
+  tr.classList.remove('over');g.classList.remove('del');ldrag.target=null;
+  const pane=$('#paneLimit'),pr=pane.getBoundingClientRect();   /* 端に来たら自動でスクロール */
+  if(p.clientY<pr.top+70)pane.scrollTop-=12;else if(p.clientY>pr.bottom-70)pane.scrollTop+=12;
+  const wrap=document.querySelector('#limitBody .lwrap');if(wrap){const wr=wrap.getBoundingClientRect();if(p.clientX<wr.left+50)wrap.scrollLeft-=12;else if(p.clientX>wr.right-40)wrap.scrollLeft+=12}
+  const el=at(),td=el&&el.closest&&el.closest('#limitBody td[data-ai]');if(!td)return;
+  const ai=+td.dataset.ai,ti=+td.dataset.ti,items=[...td.querySelectorAll('.li')],li=el.closest('.li');let pos;
+  if(li){const i=items.indexOf(li),r=li.getBoundingClientRect(),after=p.clientY>r.top+r.height/2;pos=after?i+1:i;li.classList.add(after?'ins-after':'ins-before')}
+  else{pos=items.length;if(items.length)items[items.length-1].classList.add('ins-after');else td.classList.add('ins-empty')}
+  ldrag.target={ai,ti,pos};
+}
+function lend(e){
+  if(lpress)clearTimeout(lpress.timer);lpress=null;
+  if(!ldrag)return;
+  if(e&&e.type==='touchend'&&e.cancelable)e.preventDefault();   /* 指を離したときの「クリック」が、開いたメニューのボタンを押さないように */
+  const d=ldrag;ldrag=null;ljust=performance.now();
+  const g=$('#lghost');g.style.display='none';g.classList.remove('del');$('#ltrash').classList.remove('over');document.body.classList.remove('drag-on');lclear();
+  const u=limitModel().units[d.k];if(!u){renderLimit();return}
+  if(!d.moved){openLimitSplit(d.k);return}   /* 長押しして動かさずに離した → 分割メニュー */
+  if(!d.target){renderLimit();return}
+  if(d.target.trash){
+    if(u.hand){if(confirm('手入力した「'+llabel(u)+'」を削除しますか？\n（削除すると元に戻せません）'))leRemove(d.k);else renderLimit();return}
+    if(confirm('「'+llabel(u)+'」をリミット表から外しますか？\n（生産がないとき用。上の「外した品番」からいつでも戻せます）'))leRemove(d.k);else renderLimit();return;
+  }
+  leMove(d.k,d.target.ai,d.target.ti,d.target.pos);renderLimit();
+}
+(()=>{const t=$('#limitBody');
+  t.addEventListener('touchstart',lstart,{passive:true});t.addEventListener('mousedown',lstart);
+  document.addEventListener('touchmove',lmove,{passive:false});document.addEventListener('mousemove',lmove);
+  document.addEventListener('touchend',lend);document.addEventListener('touchcancel',lend);document.addEventListener('mouseup',lend);
+  t.addEventListener('contextmenu',e=>{if(e.target.closest('.li'))e.preventDefault()});
+  t.addEventListener('selectstart',e=>{if(e.target.closest&&e.target.closest('.li'))e.preventDefault()});
+  t.addEventListener('dragstart',e=>e.preventDefault());
+  t.addEventListener('click',e=>{
+    if(performance.now()-ljust<500)return;
+    const li=e.target.closest('.li[data-li]');if(li){openLimitItem(li.dataset.li);return}
+    if(e.target.closest('#lReset')){if(confirm('並び順・外した品番・分割を、Excelから取り込んだときの元の状態に戻しますか？\n（手入力した品番は残ります）'))leReset();return}
+    if(e.target.closest('#lRem')){openLimitRemoved();return}
+    const td=e.target.closest('td[data-ai]');if(td)openLimitForm({ai:+td.dataset.ai,ti:+td.dataset.ti});   /* 空いた所 → 手入力 */
+  });
+})();
 
 /* ====== 実績 ====== */
 let jdate=ymd(Date.now()),jrows=[];
@@ -1302,7 +1469,6 @@ $('#d1add').onclick=addRow;$('#d1ok').onclick=confirmPlan;
 $('#paneDan2').addEventListener('click',e=>{const b=e.target.closest('button[data-adv],button[data-ed]');if(!b)return;const id=b.closest('[data-id]').dataset.id;if(b.dataset.ed)openQty(id,'dan2');else advance(id)});
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;layout();renderHeader();if(view==='jisseki')renderJisseki();else renderAll()});
 $('#jissekiBody').addEventListener('click',e=>{const b=e.target.closest('[data-jdel]');if(b)delJisseki(b.dataset.jdel)});
-$('#limitBody').addEventListener('click',e=>{const b=e.target.closest('[data-li]');if(b)openLimitItem(b.dataset.li)});
 $('#btnSet').onclick=openSettings;
 $('#q2').addEventListener('input',renderDan2);$('#q3').addEventListener('input',renderKensa);
 document.querySelectorAll('[data-qc]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.qc);i.value='';b.dataset.qc==='q2'?renderDan2():renderKensa();i.focus()});
