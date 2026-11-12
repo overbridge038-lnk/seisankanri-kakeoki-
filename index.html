@@ -293,7 +293,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12k</span>
+    <span class="ver">ver 2026-11-12l</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -333,7 +333,8 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12k';
+const VER='2026-11-12l';
+const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -1288,7 +1289,7 @@ function exportLimitXlsx(){
     if(cell.v==='')return `<c r="${ref}" s="${cell.s}"/>`;
     return typeof cell.v==='number'?`<c r="${ref}" s="${cell.s}"><v>${cell.v}</v></c>`:`<c r="${ref}" s="${cell.s}" t="inlineStr"><is><t xml:space="preserve">${xe(cell.v)}</t></is></c>`}).join('')+'</row>'}).join('');
   let cols='<col min="1" max="1" width="12" customWidth="1"/>';for(let ti=0;ti<T.length;ti++)[24,10,18,8].forEach((w,k)=>cols+=`<col min="${2+ti*4+k}" max="${2+ti*4+k}" width="${w}" customWidth="1"/>`);
-  const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const H='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';
   const sheet=H+`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><cols>${cols}</cols><sheetData>${rows}</sheetData><mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells><pageMargins left="0.3" right="0.3" top="0.3" bottom="0.3" header="0.2" footer="0.2"/><pageSetup paperSize="8" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
   /* 見た目 */
   const fonts=['<font><sz val="11"/><name val="Meiryo UI"/></font>'],fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>'],xfs=['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
@@ -1464,10 +1465,10 @@ function sheetXml(rows,widths,o){o=o||{};const hdr=o.hdr||[0],ttl=o.title;
   const cols=widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
   const body=rows.map((r,ri)=>`<row r="${ri+1}">`+r.map((v,ci)=>{const ref=colL(ci)+(ri+1),st=ri===ttl?' s="2"':hdr.includes(ri)?' s="1"':'';
     return typeof v==='number'?`<c r="${ref}"${st}><v>${v}</v></c>`:`<c r="${ref}"${st} t="inlineStr"><is><t>${xe(v)}</t></is></c>`}).join('')+'</row>').join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="${o.freeze||1}" topLeftCell="A${(o.freeze||1)+1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData>${o.merges&&o.merges.length?`<mergeCells count="${o.merges.length}">${o.merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}</worksheet>`;
+  return `${XMLH}<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="${o.freeze||1}" topLeftCell="A${(o.freeze||1)+1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData>${o.merges&&o.merges.length?`<mergeCells count="${o.merges.length}">${o.merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}</worksheet>`;
 }
 function buildXlsx(sheets){
-  const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const H='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';
   return zip([
    {name:'[Content_Types].xml',data:H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>'},
    {name:'_rels/.rels',data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
