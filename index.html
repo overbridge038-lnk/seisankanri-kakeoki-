@@ -115,14 +115,14 @@ input,select{font-size:1.05rem;padding:.5rem .7rem;border:2px solid var(--line);
 #toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:#0f172a;color:#fff;padding:.8rem 1.2rem;border-radius:.9rem;display:none;gap:1rem;align-items:center;z-index:70;font-weight:700;font-size:1.05rem}
 #toast.on{display:flex}
 #modal.on~#toast{top:.6rem;bottom:auto}   /* 検査の画面などを開いているあいだのお知らせは上に出す（下のボタンにかぶらない） */
-#toast button{background:#fbbf24;border:0;border-radius:.5rem;padding:.4rem .9rem;font-weight:800;font-size:1rem;cursor:pointer}
-#toast{width:max-content;max-width:calc(100% - 2rem)}#toast button{white-space:nowrap;flex:none}#toastMsg{text-wrap:balance}
+#toast{width:max-content;max-width:calc(100% - 2rem)}#toastMsg{text-wrap:balance}
 #alarm{position:fixed;inset:0;background:rgba(185,28,28,.94);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;z-index:80;text-align:center;padding:1rem;animation:bl 1s infinite}
 #alarm.on{display:flex}
 #alarm h2{font-size:2.4rem;color:#fff;margin:0}
 #alarm p{font-size:1.5rem;margin:0}
 @keyframes bl{50%{background:rgba(127,29,29,.94)}}
 header.r-dan{background:#6d28d9}
+.ibtn.ic{display:inline-flex;align-items:center;justify-content:center;padding:.45rem .6rem}.ibtn:disabled{opacity:.35;cursor:default}
 .ibtn.andon{background:#facc15;color:#111;font-size:1.1rem;padding:.45rem 1rem;border:3px solid #fff}
 #andon{position:fixed;inset:0;background:#facc15;color:#111;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:90;text-align:center;padding:1rem;animation:an .6s infinite}
 #andon.on{display:flex}
@@ -272,6 +272,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <span class="chip" id="hNet"></span>
     <span class="chip" id="hMode" style="display:none">テストモード</span>
     <button class="ibtn" id="btnRef">更新</button>
+    <button class="ibtn ic" id="btnUndo" title="元に戻す" aria-label="元に戻す" disabled><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button class="ibtn ic" id="btnRedo" title="やり直す" aria-label="やり直す" disabled><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>
     <span class="sp"></span>
     <span class="ver" id="hClock"></span>
     <button class="tab" data-view="main">画面</button>
@@ -280,7 +281,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12f</span>
+    <span class="ver">ver 2026-11-12g</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -311,7 +312,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 </div>
 <div id="modal"><div class="dlg" id="dlg"></div></div>
 <div id="lghost"></div><div id="ltrash">🗑<span>ここで離すと外す（生産がないとき）</span></div>
-<div id="toast"><span id="toastMsg"></span><button id="toastUndo">取り消す</button></div>
+<div id="toast"><span id="toastMsg"></span></div>
 <div id="andon"><h2>呼び出し</h2><div class="anl" id="anList"></div></div>
 <div id="start"><div>画面をタッチして開始<div style="font-size:1.1rem;font-weight:600;margin-top:.8rem">（呼び出しの音を鳴らすために必要です）</div></div></div>
 <div id="alarm"><h2>完了ボタンを押し忘れていませんか？</h2><p id="alarmMsg"></p><div class="row"><button class="btn fin" id="alarmFin">完了へ進む</button><button class="btn ghost" id="alarmSnooze">あとで（5分）</button></div></div>
@@ -319,7 +320,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12f';
+const VER='2026-11-12g';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -388,17 +389,49 @@ function beep(freq=880,d=.15,times=1){if(!ac)return;for(let i=0;i<times;i++){con
 document.addEventListener('pointerdown',unlockAudio);document.addEventListener('keydown',unlockAudio);
 
 /* ====== データ置き場（差し替え可能：ローカル / Googleスプレッドシート） ====== */
-function loadJobs(){jobs=load(jobsKey(),{});const lim=Date.now()-2*864e5;for(const id in jobs){if((jobs[id].st==='done'||jobs[id].st==='cancel')&&(jobs[id].td||jobs[id].t1||jobs[id].tp||0)<lim)delete jobs[id]}}
+function loadJobs(){jobs=load(jobsKey(),{});const lim=Date.now()-2*864e5;for(const id in jobs){if((jobs[id].st==='done'||jobs[id].st==='cancel')&&(jobs[id].td||jobs[id].t1||jobs[id].tp||0)<lim)delete jobs[id]};shadowAll()}
 function saveJobs(){save(jobsKey(),jobs)}
 const outbox=()=>load('outbox',{});
 let flushing=false;
+/* ====== 元に戻す／やり直す ======
+   この端末でした操作を、新しい順に最大50回まで。1つの操作で変わった品番（job）の「操作の前」と「あと」の姿を覚えておき、戻すときは前の姿を、やり直すときはあとの姿を保存し直す
+   （全端末に同じに伝わる）。新しく作った品番を戻すと「取消」になる。呼び出し（アンドン）は戻せない（鳴り・止まりを後から変えないため） */
+const jshadow={},HIST={u:[],r:[]},HMAX=50;
+let HB=null,histBusy=false,histLabel='',histNext=null;
+function shadowAll(){for(const k in jshadow)delete jshadow[k];for(const id in jobs)jshadow[id]=JSON.stringify(jobs[id])}
+function histNote(job){if(histBusy||stg(job)===9)return;if(!HB){HB={};Promise.resolve().then(histFlush)}HB[job.id]=1}
+function histFlush(){
+  const ids=Object.keys(HB||{}),lab=histLabel,extra=histNext;HB=null;histLabel='';histNext=null;
+  const before={},after={};
+  ids.forEach(id=>{const a=jobs[id];if(!a)return;const sa=JSON.stringify(a),sb=jshadow[id];jshadow[id]=sa;if(sa===sb)return;before[id]=sb?JSON.parse(sb):null;after[id]=JSON.parse(sa)});
+  if(!Object.keys(after).length)return;
+  HIST.u.push({label:lab||(Object.keys(after).some(id=>stg(after[id])===10)?'リミット表の編集':''),before,after,extra});if(HIST.u.length>HMAX)HIST.u.shift();HIST.r=[];renderHist();
+}
+function histApply(snap){
+  histBusy=true;
+  try{const now=Date.now(),L=Object.keys(snap).map(id=>{const sn=snap[id];let j;
+      if(sn)j=JSON.parse(JSON.stringify(sn));
+      else{j=JSON.parse(JSON.stringify(jobs[id]));if(stg(j)===10)j.kb={};else{j.st='cancel';j.td=now}}   /* 新しく作ったものを戻す＝取消に */
+      return j});
+    upsertAll(L);L.forEach(j=>{jshadow[j.id]=JSON.stringify(jobs[j.id])});
+  }finally{histBusy=false}
+}
+function renderHist(){
+  const u=HIST.u[HIST.u.length-1],r=HIST.r[HIST.r.length-1],bu=$('#btnUndo'),br=$('#btnRedo');if(!bu||!br)return;
+  bu.disabled=!u;br.disabled=!r;
+  bu.title=u?'元に戻す'+(u.label?'：'+u.label:''):'元に戻す（戻せる操作はありません）';br.title=r?'やり直す'+(r.label?'：'+r.label:''):'やり直す（やり直せる操作はありません）';
+}
+function afterHist(){if(view==='jisseki')afterDel()}
+function doUndo(){const e=HIST.u.pop();if(!e)return;HIST.r.push(e);histApply(e.before);if(e.extra&&e.extra.undo)e.extra.undo();renderHist();toast('元に戻しました'+(e.label?'：'+e.label:''));afterHist()}
+function doRedo(){const e=HIST.r.pop();if(!e)return;HIST.u.push(e);histApply(e.after);if(e.extra&&e.extra.redo)e.extra.redo();renderHist();toast('やり直しました'+(e.label?'：'+e.label:''));afterHist()}
+function histClear(){HIST.u=[];HIST.r=[];renderHist()}
 function upsertAll(arr){   /* まとめて保存・送信（1回だけ描き直す） */
-  const now=Date.now();arr.forEach(j=>{j.u=now;jobs[j.id]=j});saveJobs();
+  const now=Date.now();arr.forEach(j=>{j.u=now;jobs[j.id]=j;histNote(j)});saveJobs();
   if(live()){const ob=outbox();arr.forEach(j=>{ob[j.id]=j});save('outbox',ob);flush()}
   renderAll();
 }
 function upsert(job){
-  job.u=Date.now();jobs[job.id]=job;saveJobs();
+  job.u=Date.now();jobs[job.id]=job;histNote(job);saveJobs();
   if(live()){const ob=outbox();ob[job.id]=job;save('outbox',ob);flush()}
   renderAll();
 }
@@ -430,7 +463,7 @@ async function poll(){
   if(!live())return;
   try{
     const j=await gas('GET',{action:'list'});const ob=outbox();let ch=false;
-    for(const x of j.jobs){if(ob[x.id])continue;const c=jobs[x.id];if(!c||x.u>c.u){jobs[x.id]=x;ch=true}}
+    for(const x of j.jobs){if(ob[x.id])continue;const c=jobs[x.id];if(!c||x.u>c.u){jobs[x.id]=x;jshadow[x.id]=JSON.stringify(x);ch=true}}
     if(ch){saveJobs();renderAll()}setNet(true);
   }catch(e){setNet(false)}
 }
@@ -572,7 +605,7 @@ function addRow(){plan.push({hin:'',box:''});savePlan();buildDan1(true)}
 function confirmPlan(){
   const v=d1Valid();if(!v.length)return;
   const seen={};for(const p of v){const k=nh(p.hin);if(seen[k]){alert('品番「'+p.hin+'」が2回入っています');return}seen[k]=1}
-  if(v.length===1){   /* 1品番だけなら確認なしですぐ送信（9秒間は取り消し可） */
+  if(v.length===1){   /* 1品番だけなら確認なしですぐ送信（まちがえたら上の「元に戻す」） */
     const p=v[0];if(!(+p.box>=1)||!Number.isInteger(+p.box)){alert('「'+p.hin+'」の箱数（かんばん枚数）を入力してください');return}
     promotePlan([p]);return}
   openModal(`<h3>${esc(SN(2))}へ送る品番を選んでください</h3>
@@ -594,7 +627,9 @@ function promotePlan(v){
   v.forEach((p,i)=>{const n=+p.box,id='H-'+S.name+'-'+now+'-'+i+'-'+Math.random().toString(36).slice(2,5);ids.push(id);
     upsert({id,tab:S.name,hin:p.hin.normalize('NFKC').trim(),sei:'',maker:'',qty:n,n,nq:n,ins:0,t0:p.t0||now,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[]})});
   plan=plan.filter(p=>!v.includes(p)&&(nh(p.hin)||p.box!==''));if(!plan.length)plan=[{hin:'',box:''}];savePlan();buildDan1();
-  toast(v.length+'品番を'+SN(2)+'へ送りました',()=>{ids.forEach(id=>{const j=jobs[id];if(j){j.st='cancel';upsert(j)}});plan=back;savePlan();buildDan1()});
+  const planAfter=JSON.parse(JSON.stringify(plan));
+  histNext={undo:()=>{plan=JSON.parse(JSON.stringify(back));savePlan();buildDan1()},redo:()=>{plan=JSON.parse(JSON.stringify(planAfter));savePlan();buildDan1()}};   /* 元に戻す／やり直すで、入力欄も同じに */
+  toast(v.length+'品番を'+SN(2)+'へ送りました');
 }
 
 /* ====== 検査用段取り：掛け完了 → 準備OK → 検査へ ====== */
@@ -714,7 +749,7 @@ function drawInsp(){
   box.querySelectorAll('[data-fr]').forEach(b=>b.onclick=()=>{
     const x=b.dataset.fr;
     if(x==='ハンド入力'){insp.hand=!insp.hand;insp.back=false;insp.val=r;insp.memo='';drawInsp();return}
-    /* 不良・前工程の数が違う：のこり全部をその理由にして記録 → のこり0で検査完了（9秒は取り消せる） */
+    /* 不良・前工程の数が違う：のこり全部をその理由にして記録 → のこり0で検査完了（まちがえたら上の「元に戻す」） */
     if(inspDo(j=>{j.n=r2((+j.n||0)-r);j.adj=(j.adj||[]).concat([[Date.now(),-r,x,'',S.name]])}))return;beep(500,.12,1);toast(j.hin+'：'+x+'　−'+fn(r)+'箱（記録しました）');
   });
   if(insp.hand){
@@ -1385,9 +1420,9 @@ function openModal(html,mount){$('#toast').classList.remove('on');clearTimeout(t
   $('#dlg').innerHTML=html;$('#modal').classList.add('on');modalOpen=true;if(mount)mount()}
 function closeModal(){$('#modal').classList.remove('on');modalOpen=false;renderAll()}
 $('#modal').addEventListener('click',e=>{if(e.target.closest('[data-close]'))closeModal()});
-let toastT=null,undoFn=null;
-function toast(msg,undo){$('#toastMsg').textContent=msg;undoFn=undo||null;$('#toastUndo').style.display=undo?'':'none';$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),undo?9000:3500)}
-$('#toastUndo').onclick=()=>{$('#toast').classList.remove('on');if(undoFn)undoFn()};
+let toastT=null;
+/* お知らせ（取り消しボタンはなし。元に戻すは、上の「元に戻す」「やり直す」ボタン）。第2引数は使わない */
+function toast(msg){$('#toastMsg').textContent=msg;if(HB)histLabel=msg;$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),3500)}
 
 /* ====== アンドン（呼び出し） ======
    異常やこまりごとをその場で知らせる。全端末の画面が黄・赤に点滅し、対応者が「対応します」を押すまで鳴り続ける。
@@ -1480,9 +1515,9 @@ function openSettings(){
       S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;S.etaMin=+$('#sEta').value||180;S.idleMin=+$('#sIdle').value||15;S.scale=+$('#sScale').value;
       if(S.mode==='live'&&!S.gasUrl&&!onGas){alert('本番にするには Apps Script URL が必要です');return}
       if(S.mode==='live'&&!S.key){alert('本番にするには 合言葉 が必要です');return}
-      save('settings',S);loadJobs();closeModal();layout();renderAll();if(live()){flush();poll();fetchMaster().then(()=>renderAll())}
+      save('settings',S);loadJobs();histClear();closeModal();layout();renderAll();if(live()){flush();poll();fetchMaster().then(()=>renderAll())}
     };
-    $('#sClr').onclick=()=>{if(confirm('テストの記録を全部消します。よいですか？')){save('jobs_test',{});sess=null;save('sess',null);loadJobs();closeModal();renderAll()}};
+    $('#sClr').onclick=()=>{if(confirm('テストの記録を全部消します。よいですか？')){save('jobs_test',{});sess=null;save('sess',null);loadJobs();histClear();closeModal();renderAll()}};
     $('#sGetM').onclick=async()=>{S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;$('#sGetM').textContent=(await fetchMaster())?'取得しました（'+master.length+'件）':'取得できませんでした'};
     $('#sTpl').onclick=()=>downloadMasterTpl();
     $('#sOld').onclick=()=>{const td=ymd(Date.now()),L=oldLeft(td);
@@ -1623,6 +1658,10 @@ $('#jissekiBody').addEventListener('click',e=>{
   const tr=e.target.closest('tr[data-jid]');if(tr&&jselMode){const id=tr.dataset.jid;jsel.has(id)?jsel.delete(id):jsel.add(id);jRefreshSel()}   /* 行のどこを押しても選べる */
 });
 $('#btnSet').onclick=openSettings;
+$('#btnUndo').onclick=doUndo;$('#btnRedo').onclick=doRedo;
+document.addEventListener('keydown',e=>{   /* パソコン：Ctrl+Z で元に戻す、Ctrl+Y（Ctrl+Shift+Z）でやり直す。入力欄の中では使わない */
+  if(!(e.ctrlKey||e.metaKey)||modalOpen)return;const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
+  const k=e.key.toLowerCase();if(k==='z'&&!e.shiftKey){e.preventDefault();doUndo()}else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();doRedo()}});
 $('#q2').addEventListener('input',renderDan2);$('#q3').addEventListener('input',renderKensa);
 document.querySelectorAll('[data-qc]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.qc);i.value='';b.dataset.qc==='q2'?renderDan2():renderKensa();i.focus()});
 ['dragover','drop'].forEach(t=>window.addEventListener(t,e=>{if(!e.target.closest||!e.target.closest('#sDrop'))e.preventDefault()}));
@@ -1635,7 +1674,7 @@ $('#btnRef').onclick=async()=>{
 $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
 
 /* ====== 起動 ====== */
-loadJobs();layout();renderAll();tick();
+loadJobs();layout();renderAll();tick();renderHist();
 if(live()){flush();poll();fetchMaster().then(ok=>{if(ok)renderAll()})}   /* 品番マスタを読んだら客先のボタンを描き直す */
 if(live()&&(firstRun||!S.key))setTimeout(openSettings,500);   /* 初めて開いたタブレット（配布用ファイル・Google）：タブレット名・役割（・合言葉）を入れてもらう */
 </script>
