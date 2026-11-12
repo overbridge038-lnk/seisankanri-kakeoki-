@@ -251,7 +251,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-11</span>
+    <span class="ver">ver 2026-11-12</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -288,7 +288,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-11';
+const VER='2026-11-12';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -615,7 +615,7 @@ function drawInsp(){
     <div class="reg">
       <div class="tp"><span>検査開始</span><div class="wh" data-k="sH"></div><b>:</b><div class="wh" data-k="sM"></div><button class="btn ghost" data-now="s">今</button></div>
       <div class="tp"><span>検査終了</span><div class="wh" data-k="eH"></div><b>:</b><div class="wh" data-k="eM"></div><button class="btn ghost" data-now="e">今</button></div>
-      <div class="rb"><span>処理した箱数</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="iBx" type="number" min="1" step="1" inputmode="numeric" value="${insp.bx}"><button class="btn ghost" data-bx="1">+1</button></div></div>
+      <div class="rb"><span>処理した箱数</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="iBx" type="number" min="0" step="1" inputmode="numeric" value="${insp.bx}"><button class="btn ghost" data-bx="1">+1</button></div></div>
       <button class="btn insp" id="iReg" ${r>0?'':'disabled'}>登録する</button>
     </div>
     ${sh?`<div class="short">のこり <b>${fn(r)}</b>箱：足りない理由を下から選んでください</div>
@@ -657,14 +657,14 @@ function drawInsp(){
     w.addEventListener('click',e=>{const it=e.target.closest('.wi');if(!it||!it.textContent)return;insp.t[k]=+it.textContent;w.scrollTo({top:insp.t[k]*it.offsetHeight,behavior:'smooth'});mark()});
   });
   box.querySelectorAll('[data-now]').forEach(b=>b.onclick=()=>{const d=new Date(),p=b.dataset.now;insp.t[p+'H']=d.getHours();insp.t[p+'M']=d.getMinutes();drawInsp()});
-  box.querySelectorAll('[data-bx]').forEach(b=>b.onclick=()=>{insp.bx=Math.max(1,Math.min(r,(+$('#iBx').value||0)+(+b.dataset.bx)));$('#iBx').value=insp.bx});
+  box.querySelectorAll('[data-bx]').forEach(b=>b.onclick=()=>{insp.bx=Math.max(0,Math.min(r,(+$('#iBx').value||0)+(+b.dataset.bx)));$('#iBx').value=insp.bx});
   $('#iBx').oninput=e=>insp.bx=+e.target.value;
   $('#iReg').onclick=()=>{
     const bx=+$('#iBx').value,d0=new Date();d0.setSeconds(0,0);
     const st=new Date(d0).setHours(insp.t.sH,insp.t.sM),en=new Date(d0).setHours(insp.t.eH,insp.t.eM);
     if(isNaN(st)||isNaN(en)){alert('時間が読み取れませんでした。もう一度「今」を押すか、ホイールで時間を合わせてください');return}
     if(en<st){alert('検査終了の時間が、検査開始より前になっています');return}
-    if(!Number.isInteger(bx)||bx<1){alert('処理した箱数を1以上で入れてください');return}
+    if($('#iBx').value===''||!Number.isInteger(bx)||bx<0){alert('処理した箱数を0以上の整数で入れてください');return}   /* 0も登録できる（少ない箱で全部不良のときなど。時間は記録し、そのあと理由のボタンで完了） */
     if(bx>r){alert('のこり '+fn(r)+'箱より多いです。数が違うときは「ハンド入力」で直してください');return}
     const prev=JSON.parse(JSON.stringify(j));
     if(inspDo(j=>{j.ins=(+j.ins||0)+bx;j.tab3=S.name;j.ses=(j.ses||[]).concat([[st,en,bx]])}))return;
