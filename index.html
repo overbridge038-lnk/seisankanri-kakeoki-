@@ -247,7 +247,7 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
 table.lt{width:auto;min-width:100%;font-size:.95rem}.lt th{position:sticky;top:0;background:#e2e8f0;text-align:center;white-space:nowrap;z-index:1}.lt th.now{background:#fde68a}
 .lt td{vertical-align:top;padding:.25rem;min-width:7.2rem}.lt td.ar{min-width:3rem;font-weight:900;font-size:1.2rem;text-align:center;background:#f1f5f9;position:sticky;left:0}
 .li{display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:.5rem;background:#fff;padding:.25rem .45rem;margin-bottom:.25rem;cursor:pointer;font-weight:900;font-size:1.05rem;line-height:1.25}
-.li small{display:block;font-weight:600;font-size:.75rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li small{display:block;font-weight:600;font-size:.75rem;color:var(--mut);overflow-wrap:anywhere}.li small.bxs{color:#475569}.nw{white-space:nowrap}
 .li.hand{background:#e8f0fe;border-color:#1a73e8;color:#1a4fa0}.li.hand small{color:#3b5fa8}
 .li.done{background:var(--kensa-bg);border-color:var(--kensa);color:#14532d}.li.done small{color:#166534}
 .li.late{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}.li.late small{color:var(--bad)}
@@ -281,7 +281,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12g</span>
+    <span class="ver">ver 2026-11-12h</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -320,7 +320,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12g';
+const VER='2026-11-12h';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -886,6 +886,29 @@ function limitFromRows(rows){
   return limitCount(L)?L:null;
 }
 const hm0=m=>Math.floor(m/60)+':'+pad(m%60);
+/* 「必要数」の文字：Excel「掛け置き管理表データ」シートの左の列にある「…必要数」（例：日あたり必要数）の文字に合わせる。なければ「必要数」 */
+const QL=()=>(limit&&limit.qtyLabel)||'必要数';
+function qtyLabelFrom(rows){for(const r of rows||[])for(let c=0;c<4;c++){const b=String(r&&r[c]||'').trim();if(b&&b.length<=12&&/必要数/.test(b))return b}return null}   /* 左から4列目までの見出し */
+/* 1箱あたりの基準時間（秒）：掛け＝基準時間(s)の「基準」×素材の収容数、検査＝基準時間(s)の「検査」×塗完品の収容数。Excel「管理シート」から、リミット表の品番（材料・完成の品番）ぶんを読む */
+const lnum=v=>{const x=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(x)?null:x};
+function boxFromRows(rows,L){
+  const has=(r,t)=>r&&r.some(c=>String(c).trim()===t),hi=rows.findIndex(r=>has(r,'メーカー')&&has(r,'材料')&&has(r,'完成'));if(hi<0)return null;
+  const H=rows[hi].map(c=>String(c||'').trim()),S=(rows[hi+1]||[]).map(c=>String(c||'').trim());
+  const col=(c0,name)=>{if(c0<0)return -1;for(let c=c0;c<c0+3;c++)if(S[c]===name)return c;return -1};
+  const cSo=col(H.indexOf('素材'),'収容数'),cKa=col(H.indexOf('塗完品'),'収容数');
+  let g=-1;for(let r=Math.max(0,hi-3);r<=hi&&g<0;r++){const x=(rows[r]||[]).findIndex(c=>/基準時間/.test(String(c)));if(x>=0)g=x}
+  const cSt=g>=0?S.indexOf('基準',g):-1,cIn=g>=0?S.indexOf('検査',g):-1,cMk=H.indexOf('メーカー'),cM=H.indexOf('材料'),cK=H.indexOf('完成');
+  const want=new Set();L.areas.forEach(a=>a.cols.forEach(c=>c.forEach(it=>want.add(nh(it.part)))));
+  const out={},mul=(a,b)=>a!=null&&b!=null?Math.round(a*b*10)/10:null;
+  rows.slice(hi+2).forEach(r=>{if(!r||!String(r[cMk]||'').trim())return;
+    const v=[mul(lnum(r[cSt]),lnum(r[cSo])),mul(lnum(r[cIn]),lnum(r[cKa]))];
+    [r[cM],r[cK]].forEach(x=>{const k=nh(x);if(k&&want.has(k)&&!out[k])out[k]=v})});
+  return out;
+}
+const fsec=x=>{x=Math.round(x);if(x<60)return x+'秒';const m=Math.floor(x/60),r=x%60;return m+'分'+(r?r+'秒':'')};
+const boxParts=part=>{const b=limit&&limit.box&&limit.box[nh(part)];if(!b||(b[0]==null&&b[1]==null))return[];
+  return ['1箱',b[0]!=null?'掛け '+fsec(b[0]):'',b[1]!=null?'検査 '+fsec(b[1]):''].filter(Boolean)};
+const nwSpans=a=>a.map(x=>`<span class="nw">${esc(x)}</span>`).join(' ');   /* かたまりごとに折り返す（1〜2文字だけ次の行に送られないように） */
 /* ===== リミット表の編集：並べ替え・分割・外す・手入力 =====
    全端末で同じになるよう、stage 10 の記録1件（id=LE-<計画の目印>）の kb に保存する（Code.gs の変更はいらない・実績には出ない）。
    {order:[エリア][時刻]=[札のkey], removed:[key], splits:{元のkey:2〜4}, added:{key:{part,h,hanger,qty,ai,ti}}}
@@ -980,7 +1003,7 @@ function renderLimit(){
   const ach=limit.areas.map((a,ai)=>{const n=need.filter(x=>x.ai===ai),d=n.filter(x=>x.job).length,lt=late.filter(x=>x.ai===ai).length;
     return `<span class="${n.length&&d===n.length?'all':lt?'late':''}">${esc(a.area)} ${d}/${n.length}${lt?'　遅れ'+lt:''}</span>`}).join('');
   const cell=x=>{const it=x.it,j=x.job;
-    return `<button class="li ${j?'done':x.late?'late':x.nop?'nop':''}${it.hand?' hand':''}${it.piece?' sp':''}" data-li="${esc(x.key)}">${j?'済 ':''}${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}<small>${j?fn(j.qty??j.n)+'箱　'+hm(j.t1)+' 送信':x.nop?'生産なし':esc(it.hanger)+'　必要数 '+(it.qty===''?'―':it.qty)}</small></button>`};
+    return `<button class="li ${j?'done':x.late?'late':x.nop?'nop':''}${it.hand?' hand':''}${it.piece?' sp':''}" data-li="${esc(x.key)}">${j?'済 ':''}${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}<small>${j?fn(j.qty??j.n)+'箱　'+hm(j.t1)+' 送信':x.nop?'生産なし':nwSpans([it.hanger||'',QL()+' '+(it.qty===''?'―':it.qty)].filter(Boolean))}</small>${!j&&!x.nop&&boxParts(it.part).length?`<small class="bxs">${nwSpans(boxParts(it.part))}</small>`:''}</button>`};
   const colT=limit.times.map((t,ti)=>{const l=L.filter(x=>x.ti===ti);return{h:l.reduce((a,x)=>a+(x.it.h||0),0),n:l.length}});
   b.innerHTML=`<div class="lp"><div class="t">${esc(limit.title||'リミット表')}　今日の進み具合 <b>${done.length}</b> / ${need.length} 件（${pc}%）</div>
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
@@ -997,7 +1020,7 @@ function renderLimit(){
 function openLimitItem(key){
   const x=limitState().find(y=>y.key===key);if(!x)return;
   const it=x.it,j=x.job,t0=Date.now(),head=`<h3>${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}</h3><div class="big">${esc(llabel(it))}</div>
-    <div style="color:var(--mut)">ハンガー ${esc(it.hanger||'―')}　／　必要時間 (${(it.h||0).toFixed(1)}h)　／　必要数 ${it.qty===''?'―':it.qty}</div>`;
+    <div style="color:var(--mut)">ハンガー ${esc(it.hanger||'―')}　／　必要時間 (${(it.h||0).toFixed(1)}h)　／　${esc(QL())} ${it.qty===''?'―':it.qty}</div>`;
   if(j){openModal(head+`<div class="msgok" style="margin-top:.7rem;font-size:1.3rem;font-weight:900;color:var(--kensa)">済　${fn(j.qty??j.n)}箱　${hm(j.t1)} 送信（${esc(j.tab||'')}）</div><div class="foot"><button class="btn ghost" data-close>とじる</button></div>`);return}
   openModal(head+`<div class="hr" style="margin-top:.7rem"><label class="w">箱数（かんばん枚数）<input id="lBox" type="number" min="1" step="1" inputmode="numeric"></label></div>
     <div class="foot"><button class="btn ghost" data-close>もどる</button><button class="btn ok" id="lOk">送信（${esc(SN(2))}へ）</button></div>`,()=>{
@@ -1030,7 +1053,7 @@ function openLimitForm(t){
     <div class="hr" style="margin-top:.4rem"><label class="w">品番（名称）<input id="fPart" autocomplete="off" autocapitalize="characters" value="${esc(a.part)}" placeholder="例：12345-67890"></label>
     <label class="w">必要時間（h）<input id="fH" type="number" inputmode="decimal" step="0.1" min="0" value="${esc(a.h)}" placeholder="例：0.5"></label>
     <label class="w">ハンガー<input id="fHanger" autocomplete="off" value="${esc(a.hanger)}" placeholder="例：4段"></label>
-    <label class="w">必要数<input id="fQty" type="number" inputmode="numeric" step="1" min="0" value="${esc(a.qty)}" placeholder="例：10"></label></div>
+    <label class="w">${esc(QL())}<input id="fQty" type="number" inputmode="numeric" step="1" min="0" value="${esc(a.qty)}" placeholder="例：10"></label></div>
     <div id="fMsg" style="color:var(--bad);font-weight:800;min-height:1.4rem"></div>
     <div class="foot"><button class="btn ghost" data-close>やめる</button><button class="btn ok" id="fOk">${t.k?'直す':'追加する'}</button></div>`,()=>{
     lopenedAt=performance.now();setTimeout(()=>{const e=$('#fPart');if(e)e.focus()},50);
@@ -1038,7 +1061,7 @@ function openLimitForm(t){
       const part=$('#fPart').value.normalize('NFKC').trim(),hs=$('#fH').value.trim(),qs=$('#fQty').value.trim(),msg=m=>{$('#fMsg').textContent=m};
       if(!part){msg('品番（名称）を入れてください');return}
       if(hs===''||isNaN(+hs)||+hs<0||+hs>24){msg('必要時間を 0〜24 の数で入れてください（例：0.5）');return}
-      if(qs!==''&&(isNaN(+qs)||+qs<0||Math.floor(+qs)!==+qs)){msg('必要数は 0 以上の整数で入れてください');return}
+      if(qs!==''&&(isNaN(+qs)||+qs<0||Math.floor(+qs)!==+qs)){msg(QL()+'は 0 以上の整数で入れてください');return}
       const rec={part,h:Math.round(+hs*10)/10,hanger:$('#fHanger').value.trim(),qty:qs===''?'':+qs};
       closeModal();
       if(t.k)leEdit(E=>{Object.assign(E.added[t.k],rec)});
@@ -1108,7 +1131,7 @@ function lend(e){
   leMove(d.k,d.target.ai,d.target.ti,d.target.pos);renderLimit();
 }
 /* ---- 表の大きさ（縮小・拡大）：＋／－／全体、2本指で広げる・つまむ。大きさは端末に覚えさせる ---- */
-const clampLZ=z=>Math.max(.3,Math.min(2,z));
+const clampLZ=z=>Math.max(.15,Math.min(2,z));
 let limitZoom=clampLZ(+load('limitZoom',1)||1);
 function limitDims(){   /* 拡大・縮小する前の、表のそのままの大きさ */
   const bx=$('#lzbox'),tb=bx&&bx.querySelector('table');if(!tb)return null;
@@ -1143,7 +1166,7 @@ function exportLimitXlsx(){
   merge(1,1,1,NC,limit.title||'リミット表',sty({size:16,bold:1,border:'none',align:'left'}));
   merge(2,1,2,NC,'出力 '+nd.getFullYear()+'/'+pad(nd.getMonth()+1)+'/'+pad(nd.getDate())+' '+hm(nd.getTime())+'　済み '+dn+' ／ '+need.length+' 件（'+pc+'%）'+(late?'　遅れ '+late+' 件':''),sty({size:10,border:'none',align:'left',color:'FF5B6577'}));
   merge(3,1,4,1,'作業エリア',sty({bold:1,color:'FFFFFFFF',fill:'FF1F4E78'}));
-  T.forEach((t,ti)=>{const c=2+ti*4;merge(3,c,3,c+3,hm0(t),sty({bold:1,color:'FFFFFFFF',fill:'FF1F4E78'}));['品番','必要時間','ハンガー','必要数'].forEach((h,k)=>put(4,c+k,h,sty({bold:1,fill:'FFD9E1F2'})))});
+  T.forEach((t,ti)=>{const c=2+ti*4;merge(3,c,3,c+3,hm0(t),sty({bold:1,color:'FFFFFFFF',fill:'FF1F4E78'}));['品番','必要時間','ハンガー',QL()].forEach((h,k)=>put(4,c+k,h,sty({bold:1,fill:'FFD9E1F2'})))});
   const state=x=>x.job?{fill:'FFD9D9D9',color:'FF777777'}:x.late?{fill:'FFFCE8E6',color:'FFD93025'}:x.it.hand?{fill:'FFE8F0FE',color:'FF1A4FA0'}:x.it.piece?{fill:'FFFFF2CC'}:{};
   let r=5;
   A.forEach((a,ai)=>{
@@ -1545,7 +1568,7 @@ function openSettings(){
     const importMaster=async f=>{if(!f)return;
       try{const rows=await readTable(f);const m=masterFromRows(rows);
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr)}
-        if(L){limit=L;save('limit',limit);save('limitV',Date.now())}
+        if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.box=boxFromRows(rows,L)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
         const lmsg=L?'\nリミット表 '+limitCount(L)+' 件も取り込みました':'';
         if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
