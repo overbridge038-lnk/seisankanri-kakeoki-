@@ -68,7 +68,7 @@ main.split{grid-template-columns:1fr 1fr;gap:2px;background:#94a3b8}
 h2{margin:.2rem 0;font-size:1.05rem;color:#334155}
 .job{background:var(--card);border-radius:1rem;border:2px solid var(--line);padding:.8rem 1rem;display:grid;grid-template-columns:2.2rem 6.5rem 1fr auto;gap:.4rem 1rem;align-items:center}
 .job{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.job.drag{position:relative;z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.35);border-color:var(--kensa);opacity:.95;transition:none}.job.drop{border-top:8px solid #f59e0b}.job.dropb{border-bottom:8px solid #f59e0b}.hint{color:var(--mut);font-size:.9rem}
-h2 .hint{display:block;font-weight:600;margin-top:.15rem}
+h2 .hint{display:block;font-weight:600;margin-top:.15rem;text-wrap:balance}
 .job .no{font-size:1.4rem;font-weight:900;color:var(--mut);text-align:center}
 .stack{position:relative;background:var(--kensa-bg);border-radius:.6rem;text-align:center;padding:.5rem .2rem;border:2px solid var(--kensa);margin-bottom:.4rem}
 .stack.s1{box-shadow:0 5px 0 -1px #86efac,0 5px 0 0 var(--kensa)}
@@ -95,7 +95,7 @@ th,td{border:1px solid var(--line);padding:.4rem .6rem;text-align:left}
 th{background:#e2e8f0}
 .jt{font-size:.92rem;white-space:nowrap}.jt th{text-align:center;font-size:.85rem}.jt .g1{background:#ede9fe}.jt .g2{background:#f3e8ff}.jt .g3{background:#dcfce7}.jt .g4{background:#fee2e2}
 .jbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.6rem;padding:.5rem .8rem;border:2px solid var(--bad);border-radius:.7rem;background:var(--bad-bg);font-weight:800}.jbar b{color:var(--bad);font-size:1.3rem}
-.jt .jck{text-align:center}.jt .jck input{width:1.7rem;height:1.7rem}.jt tr.jsel td{background:#fecaca!important}
+.jt .jck{text-align:center}.jt .jck input{width:1.7rem;height:1.7rem}.jt tr.jsel td{background:#fecaca!important}.jt td.dpl{color:var(--bad);font-weight:800}.jt td.dmi{color:var(--kensa);font-weight:800}
 .jt .gl{border-left:3px solid #64748b}.jt .tb{font-weight:800;background:#f8fafc}
 td.n,th.n{text-align:right}
 input,select{font-size:1.05rem;padding:.5rem .7rem;border:2px solid var(--line);border-radius:.6rem;background:#fff}
@@ -261,6 +261,9 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 #lghost{display:none;position:fixed;z-index:60;pointer-events:none;background:#1a73e8;color:#fff;font-weight:800;font-size:1.1rem;padding:.5rem .9rem;border-radius:.6rem;box-shadow:0 6px 16px rgba(0,0,0,.3)}#lghost.del{background:var(--bad)}
 #ltrash{display:none;position:fixed;z-index:60;left:50%;bottom:1.1rem;transform:translateX(-50%);align-items:center;gap:.6rem;padding:.8rem 1.6rem;border-radius:3rem;background:#fff;border:3px dashed var(--bad);color:var(--bad);font-size:1.9rem;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 #ltrash span{font-size:1rem}body.drag-on #ltrash{display:flex}#ltrash.over{background:var(--bad);color:#fff;border-style:solid;transform:translateX(-50%) scale(1.1)}
+.chp{display:inline-block;margin-left:.4rem;padding:.05rem .55rem;border-radius:.5rem;background:#e0f2fe;color:#075985;font-size:.95rem;font-weight:800;vertical-align:middle;white-space:nowrap}
+.jr .ar{display:inline-block;margin-right:.3rem;padding:0 .3rem;border-radius:.3rem;background:#e2e8f0;color:#334155;font-size:.7rem;font-weight:800;vertical-align:middle}
+#main .jr.kd{background:#f0fdf4}
 </style>
 </head>
 <body>
@@ -281,15 +284,13 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12h</span>
+    <span class="ver">ver 2026-11-12i</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
       <div class="panehead ph-dan" id="phDan1" style="display:none"></div>
-      <div class="body"><div id="d1pick"></div><div class="sum"><span class="s" id="d1sum"></span></div><div id="d1rows"></div>
-        <button class="btn sm" id="d1add">＋ 品番を追加</button>
-        <div class="actions"><button class="btn ok" id="d1ok" disabled>送信（検査用段取りへ）</button></div>
-        <div id="d1sent"></div></div>
+      <div class="sbar"><input id="qk" type="search" placeholder="品番・背番で検索" autocomplete="off" autocapitalize="characters"><button class="btn sm" data-qc="qk">×</button></div>
+      <div class="body" id="kBody"></div>
     </section>
     <section class="pane" id="paneKake">
       <div class="panehead ph-kake" id="phKake" style="display:none">掛け作業場</div>
@@ -320,7 +321,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12h';
+const VER='2026-11-12i';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -468,7 +469,7 @@ async function poll(){
   }catch(e){setNet(false)}
 }
 async function fetchMaster(){
-  try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());d1Built=false;return true}}catch(e){}
+  try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());return true}}catch(e){}
   return false;
 }
 let andonLog=[];
@@ -557,79 +558,98 @@ function pickQrless(){
   });
 }
 
-/* ====== 段取り①：生産する品番をハンド入力（品番・背番・箱数） ====== */
-let plan=load('plan3',[{hin:'',box:''}]),d1Built=false,sentOpen=false;
+/* ====== 段取り①+掛け：検査と同じ「一覧＋登録画面」 ======
+   一覧＝リミット表の品番（リミットの早い順）。品番をタップ → 開始・終了の時間、処理した箱数、登録する。登録するたびに、その箱数が検査用段取りへ送られる（1回の登録＝検査用段取りに1行）。
+   掛けの開始・終了は kb に [[開始,終了]] で持つ（実績の掛け時間・正味時間の計算に使う）。リミット表にない品番は「掛けのみ入力（突発）」 */
 const nh=x=>String(x??'').normalize('NFKC').trim().toUpperCase();
-function savePlan(){save('plan3',plan)}
 /* 検索：品番・背番の一部で絞り込む（全角半角・大小文字はそろえて比べる） */
 const qv=id=>nh(($('#'+id)||{}).value||'');
 const hitQ=(j,q)=>!q||nh(j.hin).includes(q)||nh(j.sei||'').includes(q);
 /* 客先名はスペースや（ ）の前で改行して、1〜2文字だけ次の行に送られないようにする */
-const cuLabel=c=>String(c).trim().replace(/（/g,' （').split(/[\s\u3000]+/).filter(Boolean).map(x=>`<span class="ln">${esc(x)}</span>`).join('');
+const cuLabel=c=>String(c).trim().replace(/（/g,' （').split(/[\s　]+/).filter(Boolean).map(x=>`<span class="ln">${esc(x)}</span>`).join('');
 let pickCust=null;
-function renderPick(){
-  const el=$('#d1pick');if(!el)return;
-  if(!master.length){el.innerHTML='';return}
-  const custs=[...new Set(master.map(m=>m.cust))];
-  if(pickCust&&!custs.includes(pickCust))pickCust=null;
+function renderPickInto(el,onPick){   /* 品番マスタから 客先→品番 を選ぶ */
+  if(!el)return;if(!master.length){el.innerHTML='';return}
+  const custs=[...new Set(master.map(m=>m.cust))];if(pickCust&&!custs.includes(pickCust))pickCust=null;
   el.innerHTML=!pickCust
    ?`<div class="mp"><div class="ttl"><span>① 客先を選ぶ</span></div><div class="gr cu">${custs.map(c=>`<button data-cu="${esc(c)}">${cuLabel(c)}<small style="color:#ddd6fe">${master.filter(m=>m.cust===c).length}品番</small></button>`).join('')}</div></div>`
    :`<div class="mp"><div class="ttl"><span>② ${esc(pickCust)}：名称を選ぶ</span><button class="btn sm back" data-cu="">← 客先にもどる</button></div><div class="gr">${master.filter(m=>m.cust===pickCust).map(m=>m.kind==='row'?`<button data-pk="${esc(m.hin)}">${esc(m.hin)}${m.pn?`<small>${esc(m.pn)}</small>`:''}</button>`:`<button data-pk="${esc(m.hin||m.name)}">${esc(m.name||m.hin)}<small>${esc(m.sub||(m.name?m.hin:''))}</small></button>`).join('')}</div></div>`;
+  el.onclick=e=>{const c=e.target.closest('[data-cu]'),k=e.target.closest('[data-pk]');if(c){pickCust=c.dataset.cu||null;renderPickInto(el,onPick)}else if(k)onPick(k.dataset.pk)};
 }
-function pickItem(h){
-  let i=plan.findIndex(p=>nh(p.hin)===nh(h));
-  if(i<0){const e=plan.findIndex(p=>!nh(p.hin));if(e>=0){plan[e].hin=h;i=e}else{plan.push({hin:h,box:''});i=plan.length-1}if(!plan[i].t0)plan[i].t0=Date.now()}
-  savePlan();buildDan1();
-  const r=$('#d1rows').querySelector(`.hr[data-i="${i}"] .f-box`);if(r){r.focus();r.select&&r.select()}
+const kakeBoxesToday=part=>Object.values(jobs).filter(j=>!j.only&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&j.t1&&ymd(j.t1)===ymd(Date.now())&&nh(j.hin)===nh(part)).reduce((a,j)=>a+boxesOf(j),0);
+/* 掛けを登録：検査用段取りへ1行送る */
+function kakeRegister({part,n,start,end}){
+  const now=Date.now(),id='H-'+S.name+'-'+now+'-'+Math.random().toString(36).slice(2,5);
+  upsert({id,tab:S.name,hin:String(part).normalize('NFKC').trim(),sei:'',maker:'',qty:n,n,nq:n,ins:0,t0:start,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[[start,end]]});
+  toast(String(part).trim()+' '+n+'箱を'+SN(2)+'へ送りました');
 }
-function buildDan1(focusLast){
-  renderPick();
-  d1Built=true;
-  $('#d1rows').innerHTML=plan.map((p,i)=>`<div class="hr" data-i="${i}"><button class="x" data-del="${i}" title="この行を消す">×</button>
-    <label class="w">品番・背番<input class="f-hin" value="${esc(p.hin)}" autocomplete="off" autocapitalize="characters"></label>
-    <label class="w">箱数（かんばん枚数）<input class="f-box" type="number" min="1" step="1" inputmode="numeric" value="${esc(p.box)}"></label></div>`).join('');
-  updDan1();
-  if(focusLast){const l=$('#d1rows').querySelector('.hr:last-child .f-hin');if(l)l.focus()}
+const kakeRange=j=>{const k=j.kb&&j.kb[0];return k&&k.length===2&&k[0]&&k[1]?[k[0],k[1]]:[j.t0,j.t1]};   /* 掛けの開始・終了（古い記録は 入力開始〜送信） */
+function renderDan1(){
+  if(!showDan1()||view!=='main')return;
+  const b=$('#kBody');if(!b)return;
+  const only=`<button class="btn sm" id="kOnlyBtn" style="margin-bottom:.5rem">＋ 掛けのみ入力（突発）</button>`;
+  if(!limit){b.innerHTML=only+'<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
+  const qk=qv('qk'),L=limitState().filter(x=>!x.nop).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i),todo=L.filter(x=>!x.isDone),dn=L.filter(x=>x.isDone);
+  const T=todo.filter(x=>hitQ({hin:x.it.part},qk)),D=dn.filter(x=>hitQ({hin:x.it.part},qk)),day0=new Date();day0.setHours(0,0,0,0);
+  const row=x=>{const it=x.it,ar=limit.areas[x.ai].area;
+    return `<div class="job jr kk${x.isDone?' kd':''}" data-kk="${esc(x.key)}"><span class="no">${x.isDone?'✓':todo.indexOf(x)+1}</span><span class="h"><span class="ar">${esc(ar)}</span>${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}</span><span class="bxb">${x.need>0?(x.isDone?fn(x.done):fn(x.rem))+'/'+x.need+'箱':fn(x.done)+'箱'}</span><span class="tm">${x.done?'済 '+fn(x.done):'―'}</span><span class="t">${hm0(limit.times[x.ti])}</span>${x.isDone?'<span class="rem">済</span>':`<span class="rem" data-eta="${day0.getTime()+limit.times[x.ti]*60000}"></span>`}<span class="go">›</span></div>`};
+  const late=todo.filter(x=>x.late).length;
+  b.innerHTML=`${only}<div class="sum"><span class="s">済み <b>${dn.length}</b> / ${L.length} 件</span>${late?`<span class="s" style="border-color:var(--bad);color:var(--bad)">遅れ <b style="color:var(--bad)">${late}</b> 件</span>`:''}</div>
+   <h2>これから掛ける（${qk?T.length+'件／全'+todo.length:T.length}件）<span class="hint">品番をタップして登録（リミットの早い順）。登録すると${esc(SN(2))}へ送られます</span></h2>
+   ${T.length?`<div class="jlist"><div class="jr hd"><span>No</span><span>品番・背番</span><span style="text-align:right">のこり／全体</span><span class="tm">掛け済み</span><span>リミット</span><span>のこり時間</span><span></span></div>${T.map(row).join('')}</div>`:(qk&&todo.length?'<div class="empty">「'+esc(qk)+'」に当てはまる品番はありません</div>':'<div class="empty">掛けるものは、ありません</div>')}
+   ${D.length?`<h2>掛け済み（${D.length}件）</h2><div class="jlist">${D.map(row).join('')}</div>`:''}`;
+  tick();
 }
-function d1Valid(){return plan.filter(p=>nh(p.hin))}
-function updDan1(){
-  if(!d1Built)return;
-  const v=d1Valid(),tb=fn(v.reduce((a,p)=>a+(+p.box||0),0));
-  $('#d1sum').innerHTML=`入力済み <b>${v.length}</b> 品番　箱数合計 <b>${tb}</b>`;$('#d1ok').disabled=!v.length;$('#d1ok').textContent='送信（'+SN(2)+'へ）';
-  const mine=Object.values(jobs).filter(j=>j.tab===S.name&&j.t1&&j.st!=='cancel'&&ymd(j.t1)===ymd(Date.now())).sort((a,b)=>b.t1-a.t1);
-  /* さっき送ったもの：ふだんはボタンだけ。押すと今日送ったものを新しい順に全部出す（もう一度押すと閉じる） */
-  $('#d1sent').innerHTML=mine.length?`<button class="btn sm" id="d1sentBtn" style="width:100%">さっき送ったもの（今日 ${mine.length}件）${sentOpen?'▲ とじる':'▼ 見る'}</button>${sentOpen?`<div class="sent" style="margin-top:.4rem">${mine.map(j=>`<div><span>${esc(j.hin)}　${j.n}箱</span><small>${hm(j.t1)}</small></div>`).join('')}</div>`:''}`:'';
+let kd=null;   /* 掛けの登録画面の状態 {key,part,bx,t} */
+function openKake(key,part){const nd=new Date();kd={key:key||null,part:part||null,bx:null,t:{sH:nd.getHours(),sM:nd.getMinutes(),eH:nd.getHours(),eM:nd.getMinutes()}};openModal('<div id="kakeBox"></div>',drawKake)}
+function drawKake(){
+  const box=$('#kakeBox');if(!box||!kd)return;
+  const x=kd.key&&limit?limitState().find(y=>y.key===kd.key):null;if(kd.key&&!x){closeModal();return}
+  const part=x?x.it.part:kd.part,done=x?x.done:kakeBoxesToday(part),need=x?x.need:0,rem=x?x.rem:0;
+  if(kd.bx==null)kd.bx=x&&rem>0?rem:1;
+  const sub=x?`${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}　${need>0?'全体 '+need+'箱':''}`:'掛けのみ（突発）';
+  box.innerHTML=`<h3>${esc(x?llabel(x.it):part)}　<span style="font-size:1rem;color:var(--mut)">${sub}</span>${stdChips(part,'k',x&&x.it.hanger)}</h3>
+    <div class="st3">${x&&need>0?`<div class="c on"><span>のこり</span><b>${fn(rem)}</b><small>箱</small></div><div class="c"><span>掛け済み</span><b>${fn(done)}</b><small>箱</small></div><div class="c"><span>全体</span><b>${fn(need)}</b><small>箱</small></div>`:`<div class="c on" style="grid-column:1/-1"><span>今日の掛け済み</span><b>${fn(done)}</b><small>箱</small></div>`}</div>
+    <div class="reg">
+      <div class="tp"><span>掛け開始</span><div class="wh" data-k="sH"></div><b>:</b><div class="wh" data-k="sM"></div><button class="btn ghost" data-now="s">今</button></div>
+      <div class="tp"><span>掛け終了</span><div class="wh" data-k="eH"></div><b>:</b><div class="wh" data-k="eM"></div><button class="btn ghost" data-now="e">今</button></div>
+      <div class="rb"><span>処理した箱数</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="kBx" type="number" min="1" step="1" inputmode="numeric" value="${kd.bx}"><button class="btn ghost" data-bx="1">+1</button></div></div>
+      <button class="btn insp" id="kReg">登録する</button>
+    </div>
+    <div class="foot"><button class="btn ghost" data-close>とじる</button></div>`;
+  box.querySelectorAll('.wh').forEach(w=>{const k=w.dataset.k,max=k.endsWith('H')?23:59;
+    w.innerHTML='<div class="wi"></div>'+Array.from({length:max+1},(_,v)=>`<div class="wi">${pad(v)}</div>`).join('')+'<div class="wi"></div>';
+    const mark=()=>w.querySelectorAll('.wi').forEach((e,i)=>e.classList.toggle('on',i-1===kd.t[k]));
+    requestAnimationFrame(()=>{w.scrollTop=kd.t[k]*w.children[1].offsetHeight;mark()});
+    let tm=null;w.addEventListener('scroll',()=>{clearTimeout(tm);tm=setTimeout(()=>{if(!w.isConnected)return;const ih=w.children[1].offsetHeight;if(!(ih>0))return;
+      kd.t[k]=Math.max(0,Math.min(max,Math.round(w.scrollTop/ih)));mark()},90)});
+    w.addEventListener('click',e=>{const it=e.target.closest('.wi');if(!it||!it.textContent)return;kd.t[k]=+it.textContent;w.scrollTo({top:kd.t[k]*it.offsetHeight,behavior:'smooth'});mark()});
+  });
+  box.querySelectorAll('[data-now]').forEach(b=>b.onclick=()=>{const d=new Date(),p=b.dataset.now;kd.t[p+'H']=d.getHours();kd.t[p+'M']=d.getMinutes();drawKake()});
+  box.querySelectorAll('[data-bx]').forEach(b=>b.onclick=()=>{kd.bx=Math.max(1,(+$('#kBx').value||0)+(+b.dataset.bx));$('#kBx').value=kd.bx});
+  $('#kBx').oninput=e=>kd.bx=+e.target.value;
+  $('#kReg').onclick=()=>{
+    const bx=+$('#kBx').value,d0=new Date();d0.setSeconds(0,0);
+    const st=new Date(d0).setHours(kd.t.sH,kd.t.sM),en=new Date(d0).setHours(kd.t.eH,kd.t.eM);
+    if(isNaN(st)||isNaN(en)){alert('時間が読み取れませんでした。もう一度「今」を押すか、ホイールで時間を合わせてください');return}
+    if(en<st){alert('掛け終了の時間が、掛け開始より前になっています');return}
+    if($('#kBx').value===''||!Number.isInteger(bx)||bx<1){alert('処理した箱数を1以上の整数で入れてください');return}
+    if(x&&need>0&&bx>rem&&!confirm('のこり '+fn(rem)+'箱より多い '+bx+'箱です。このまま登録しますか？'))return;
+    if(en===st&&!confirm('掛けた時間が0分です（開始と終了が同じ）。このまま登録しますか？\n0分のものは、能率の計算に入りません。'))return;
+    kakeRegister({part,n:bx,start:st,end:en});
+    kd.t.sH=kd.t.eH;kd.t.sM=kd.t.eM;kd.bx=null;beep(1500,.08,1);
+    if(x&&need>0&&rem-bx<=0){closeModal();return}   /* のこり0 → 画面を閉じる */
+    drawKake();
+  };
 }
-function renderDan1(){if(!showDan1()||view!=='main')return;if(!d1Built)buildDan1();else updDan1()}
-function addRow(){plan.push({hin:'',box:''});savePlan();buildDan1(true)}
-function confirmPlan(){
-  const v=d1Valid();if(!v.length)return;
-  const seen={};for(const p of v){const k=nh(p.hin);if(seen[k]){alert('品番「'+p.hin+'」が2回入っています');return}seen[k]=1}
-  if(v.length===1){   /* 1品番だけなら確認なしですぐ送信（まちがえたら上の「元に戻す」） */
-    const p=v[0];if(!(+p.box>=1)||!Number.isInteger(+p.box)){alert('「'+p.hin+'」の箱数（かんばん枚数）を入力してください');return}
-    promotePlan([p]);return}
-  openModal(`<h3>${esc(SN(2))}へ送る品番を選んでください</h3>
-   <label class="ckr all"><input type="checkbox" id="ckAll" checked>すべて選ぶ／はずす</label>
-   ${v.map(p=>`<label class="ckr"><input type="checkbox" class="ckp" data-i="${plan.indexOf(p)}" checked>${esc(p.hin)}　${p.box===''?'<span style="color:var(--bad)">箱数なし</span>':(+p.box)+'箱'}</label>`).join('')}
-   <div class="foot"><button class="btn ghost" data-close>もどる</button><button class="btn ok" id="okP"></button></div>`,()=>{
-    const cks=()=>[...document.querySelectorAll('.ckp')];
-    const upd=()=>{const n=cks().filter(c=>c.checked).length;$('#okP').textContent='選んだ '+n+' 品番を送信';$('#okP').disabled=!n;$('#ckAll').checked=n===cks().length};
-    $('#ckAll').onchange=e=>{cks().forEach(c=>c.checked=e.target.checked);upd()};
-    cks().forEach(c=>c.onchange=upd);upd();
-    $('#okP').onclick=()=>{
-      const ch=cks().filter(c=>c.checked).map(c=>plan[+c.dataset.i]);
-      const bad=ch.find(p=>!(+p.box>=1)||!Number.isInteger(+p.box));
-      if(bad){alert('「'+bad.hin+'」の箱数（かんばん枚数）を入力してください');return}
-      closeModal();promotePlan(ch)}});
-}
-function promotePlan(v){
-  const now=Date.now(),back=JSON.parse(JSON.stringify(plan)),ids=[];
-  v.forEach((p,i)=>{const n=+p.box,id='H-'+S.name+'-'+now+'-'+i+'-'+Math.random().toString(36).slice(2,5);ids.push(id);
-    upsert({id,tab:S.name,hin:p.hin.normalize('NFKC').trim(),sei:'',maker:'',qty:n,n,nq:n,ins:0,t0:p.t0||now,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[]})});
-  plan=plan.filter(p=>!v.includes(p)&&(nh(p.hin)||p.box!==''));if(!plan.length)plan=[{hin:'',box:''}];savePlan();buildDan1();
-  const planAfter=JSON.parse(JSON.stringify(plan));
-  histNext={undo:()=>{plan=JSON.parse(JSON.stringify(back));savePlan();buildDan1()},redo:()=>{plan=JSON.parse(JSON.stringify(planAfter));savePlan();buildDan1()}};   /* 元に戻す／やり直すで、入力欄も同じに */
-  toast(v.length+'品番を'+SN(2)+'へ送りました');
+function openKakeOnly(){
+  openModal(`<h3>掛けのみ入力（突発）</h3><div class="hint">リミット表にない品番を掛けるとき</div><div id="kpick"></div>
+    <div class="hr" style="margin-top:.6rem"><label class="w">品番・背番<input id="kHin" autocomplete="off" autocapitalize="characters"></label></div>
+    <div class="foot"><button class="btn ghost" data-close>やめる</button><button class="btn ok" id="kGo">登録画面へ</button></div>`,()=>{
+    renderPickInto($('#kpick'),h=>{$('#kHin').value=h;$('#kGo').focus()});
+    $('#kHin').focus();$('#kHin').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#kGo').click()}};
+    $('#kGo').onclick=()=>{const h=$('#kHin').value.normalize('NFKC').trim();if(!h){alert('品番・背番を入れてください');return}openKake(null,h)};
+  });
 }
 
 /* ====== 検査用段取り：掛け完了 → 準備OK → 検査へ ====== */
@@ -685,7 +705,7 @@ function drawInsp(){
   const r=remN(j);if(insp.bx==null||insp.bx>r)insp.bx=r;
   /* はじめは「時間・処理した箱数・登録する」だけ。のこりより少なく登録したら（検査済みがあって、のこりがあるとき）、赤い3つと一時中断を出す */
   const sh=r>0&&(insp.short||+j.ins>0);
-  box.innerHTML=`<h3>${esc(j.hin)}　<span style="font-size:1rem;color:var(--mut)">到着予定 ${hm(j.eta)}　送信 ${fn(j.qty??j.n)}箱</span></h3>
+  box.innerHTML=`<h3>${esc(j.hin)}　<span style="font-size:1rem;color:var(--mut)">到着予定 ${hm(j.eta)}　送信 ${fn(j.qty??j.n)}箱</span>${stdChips(j.hin,'i')}</h3>
     <div class="st3"><div class="c on"><span>のこり</span><b>${fn(r)}</b><small>箱</small></div><div class="c"><span>検査済み</span><b>${fn(j.ins||0)}</b><small>箱</small></div><div class="c"><span>全体</span><b>${fn(j.n)}</b><small>箱</small></div></div>
     <div class="reg">
       <div class="tp"><span>検査開始</span><div class="wh" data-k="sH"></div><b>:</b><div class="wh" data-k="sM"></div><button class="btn ghost" data-now="s">今</button></div>
@@ -889,26 +909,29 @@ const hm0=m=>Math.floor(m/60)+':'+pad(m%60);
 /* 「必要数」の文字：Excel「掛け置き管理表データ」シートの左の列にある「…必要数」（例：日あたり必要数）の文字に合わせる。なければ「必要数」 */
 const QL=()=>(limit&&limit.qtyLabel)||'必要数';
 function qtyLabelFrom(rows){for(const r of rows||[])for(let c=0;c<4;c++){const b=String(r&&r[c]||'').trim();if(b&&b.length<=12&&/必要数/.test(b))return b}return null}   /* 左から4列目までの見出し */
-/* 1箱あたりの基準時間（秒）：掛け＝基準時間(s)の「基準」×素材の収容数、検査＝基準時間(s)の「検査」×塗完品の収容数。Excel「管理シート」から、リミット表の品番（材料・完成の品番）ぶんを読む */
+/* 標準時間：Excel「管理シート」の「基準時間(s)」（1個あたりの秒）と収容数。掛け＝「基準」×素材の収容数、検査＝「検査」×塗完品の収容数。品番（材料・完成の品番）ごと */
 const lnum=v=>{const x=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(x)?null:x};
-function boxFromRows(rows,L){
+function stdFromRows(rows){
   const has=(r,t)=>r&&r.some(c=>String(c).trim()===t),hi=rows.findIndex(r=>has(r,'メーカー')&&has(r,'材料')&&has(r,'完成'));if(hi<0)return null;
   const H=rows[hi].map(c=>String(c||'').trim()),S=(rows[hi+1]||[]).map(c=>String(c||'').trim());
   const col=(c0,name)=>{if(c0<0)return -1;for(let c=c0;c<c0+3;c++)if(S[c]===name)return c;return -1};
   const cSo=col(H.indexOf('素材'),'収容数'),cKa=col(H.indexOf('塗完品'),'収容数');
   let g=-1;for(let r=Math.max(0,hi-3);r<=hi&&g<0;r++){const x=(rows[r]||[]).findIndex(c=>/基準時間/.test(String(c)));if(x>=0)g=x}
-  const cSt=g>=0?S.indexOf('基準',g):-1,cIn=g>=0?S.indexOf('検査',g):-1,cMk=H.indexOf('メーカー'),cM=H.indexOf('材料'),cK=H.indexOf('完成');
-  const want=new Set();L.areas.forEach(a=>a.cols.forEach(c=>c.forEach(it=>want.add(nh(it.part)))));
-  const out={},mul=(a,b)=>a!=null&&b!=null?Math.round(a*b*10)/10:null;
+  const cSt=g>=0?S.indexOf('基準',g):-1,cIn=g>=0?S.indexOf('検査',g):-1,cMk=H.indexOf('メーカー'),cM=H.indexOf('材料'),cK=H.indexOf('完成'),out={};
   rows.slice(hi+2).forEach(r=>{if(!r||!String(r[cMk]||'').trim())return;
-    const v=[mul(lnum(r[cSt]),lnum(r[cSo])),mul(lnum(r[cIn]),lnum(r[cKa]))];
-    [r[cM],r[cK]].forEach(x=>{const k=nh(x);if(k&&want.has(k)&&!out[k])out[k]=v})});
+    const v={k:lnum(r[cSt]),qk:lnum(r[cSo]),i:lnum(r[cIn]),qi:lnum(r[cKa])};
+    [r[cM],r[cK]].forEach(x=>{const k=nh(x);if(k&&!out[k])out[k]=v})});
   return out;
 }
-const fsec=x=>{x=Math.round(x);if(x<60)return x+'秒';const m=Math.floor(x/60),r=x%60;return m+'分'+(r?r+'秒':'')};
-const boxParts=part=>{const b=limit&&limit.box&&limit.box[nh(part)];if(!b||(b[0]==null&&b[1]==null))return[];
-  return ['1箱',b[0]!=null?'掛け '+fsec(b[0]):'',b[1]!=null?'検査 '+fsec(b[1]):''].filter(Boolean)};
-const nwSpans=a=>a.map(x=>`<span class="nw">${esc(x)}</span>`).join(' ');   /* かたまりごとに折り返す（1〜2文字だけ次の行に送られないように） */
+const stdOf=part=>{const m=limit&&limit.std;return m&&m[nh(part)]||null};
+const hangerOf=part=>{if(!limit)return'';const k=nh(part);for(const a of limit.areas)for(const c of a.cols)for(const it of c)if(nh(it.part)===k&&it.hanger)return it.hanger;return''};
+const fmtn=v=>String(Math.round(v*10)/10);
+/* 登録画面の見出しに出す：ハンガー種類と、1個あたりの基準時間（掛け＝基準／検査＝検査） */
+function stdChips(part,kind,hanger){
+  const sd=stdOf(part),h=hanger||hangerOf(part),v=sd?(kind==='k'?sd.k:sd.i):null,a=[];
+  if(h)a.push('ハンガー '+h);if(v!=null)a.push('基準時間 '+fmtn(v)+'秒/個');
+  return a.map(t=>`<span class="chp">${esc(t)}</span>`).join('');
+}
 /* ===== リミット表の編集：並べ替え・分割・外す・手入力 =====
    全端末で同じになるよう、stage 10 の記録1件（id=LE-<計画の目印>）の kb に保存する（Code.gs の変更はいらない・実績には出ない）。
    {order:[エリア][時刻]=[札のkey], removed:[key], splits:{元のkey:2〜4}, added:{key:{part,h,hanger,qty,ai,ti}}}
@@ -985,52 +1008,45 @@ function leSplit(k,n){leEdit(E=>{const w=lwhere(E.order,k);if(!w)return;E.splits
 function leUnsplit(pk,bk){leEdit(E=>{const ps=pcKeys(bk,E.splits[bk]||0);ps.forEach(u=>{if(u!==pk){const x=lwhere(E.order,u);if(x)E.order[x.a][x.t].splice(x.j,1)}});
   const at=lwhere(E.order,pk);if(at)E.order[at.a][at.t].splice(at.j,1,bk);E.removed=E.removed.filter(u=>ps.indexOf(u)<0);delete E.splits[bk]})}
 function leReset(){leEdit(E=>{E.order=E.order.map(c=>c.map(()=>[]));E.removed=[];E.splits={}})}   /* 手入力した品番は残す（元の場所へ） */
-/* 計画の各品番（札）に、今日の送信（job）を割り当てる。戻り値：[{ai,ti,i,key,it,job,late,nop}] */
+/* 計画の各品番（札）に、今日の掛け（送信）の箱数を、リミットの早い順に割り当てる。のこり＝必要数−掛け済み。のこり0で「済」 */
+const boxesOf=j=>+(j.qty??j.n)||0;
 function limitState(){
   if(!limit)return[];
   const m=limitModel(),td=ymd(Date.now()),nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),q={};
   Object.values(jobs).filter(j=>j.t1&&!j.only&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));
   const L=[];m.order.forEach((cols,ai)=>cols.forEach((list,ti)=>list.forEach((k,i)=>L.push({ai,ti,i,key:k,it:m.units[k]}))));
-  L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{const k=q[nh(x.it.part)];x.job=k&&k.length?k.shift():null;x.nop=!(x.it.qty>0)&&!x.it.hand;x.late=!x.job&&!x.nop&&nowM>limit.times[x.ti]});
+  const by={};L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{(by[nh(x.it.part)]=by[nh(x.it.part)]||[]).push(x)});
+  Object.keys(by).forEach(k=>{const us=by[k],js=q[k]||[],rest=js.map(boxesOf);let ji=0;
+    us.forEach(x=>{const need=x.it.qty>0?+x.it.qty:0,want=need>0?need:Infinity;let got=0,last=null;
+      while(ji<js.length&&got<want){if(rest[ji]<=0){ji++;continue}const t=Math.min(rest[ji],want-got);got+=t;rest[ji]-=t;last=js[ji]}
+      x.need=need;x.done=got;x.last=last;x.rem=need>0?Math.max(0,need-got):0});
+    let left=0;for(let i=ji;i<js.length;i++)left+=Math.max(0,rest[i]);
+    if(left>0&&us.length){const lu=us[us.length-1];lu.done+=left;lu.last=js[js.length-1]}});   /* 必要数を超えた分は、最後の札に足す */
+  L.forEach(x=>{x.nop=!(x.it.qty>0)&&!x.it.hand;x.isDone=x.need>0?x.done>=x.need:x.done>0;x.job=x.isDone?x.last:null;x.late=!x.isDone&&!x.nop&&nowM>limit.times[x.ti]});
   L.model=m;return L;
 }
 function renderLimit(){
   const b=$('#limitBody');if(!b||(ldrag&&ldrag.on))return;
   if(!limit){b.innerHTML='<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
-  const L=limitState(),m=L.model,need=L.filter(x=>!x.nop||x.job),done=need.filter(x=>x.job),late=L.filter(x=>x.late);
+  const L=limitState(),m=L.model,need=L.filter(x=>!x.nop||x.isDone),done=need.filter(x=>x.isDone),late=L.filter(x=>x.late);
   const nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),pc=need.length?Math.round(done.length/need.length*100):0;
   const nx=limit.times.findIndex(t=>t>=nowM);
-  const ach=limit.areas.map((a,ai)=>{const n=need.filter(x=>x.ai===ai),d=n.filter(x=>x.job).length,lt=late.filter(x=>x.ai===ai).length;
+  const ach=limit.areas.map((a,ai)=>{const n=need.filter(x=>x.ai===ai),d=n.filter(x=>x.isDone).length,lt=late.filter(x=>x.ai===ai).length;
     return `<span class="${n.length&&d===n.length?'all':lt?'late':''}">${esc(a.area)} ${d}/${n.length}${lt?'　遅れ'+lt:''}</span>`}).join('');
-  const cell=x=>{const it=x.it,j=x.job;
-    return `<button class="li ${j?'done':x.late?'late':x.nop?'nop':''}${it.hand?' hand':''}${it.piece?' sp':''}" data-li="${esc(x.key)}">${j?'済 ':''}${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}<small>${j?fn(j.qty??j.n)+'箱　'+hm(j.t1)+' 送信':x.nop?'生産なし':nwSpans([it.hanger||'',QL()+' '+(it.qty===''?'―':it.qty)].filter(Boolean))}</small>${!j&&!x.nop&&boxParts(it.part).length?`<small class="bxs">${nwSpans(boxParts(it.part))}</small>`:''}</button>`};
+  const cell=x=>{const it=x.it;   /* カードは品番だけ（ハンガー・必要数・基準時間は、タップした登録画面に出す） */
+    return `<button class="li ${x.isDone?'done':x.late?'late':x.nop?'nop':''}${it.hand?' hand':''}${it.piece?' sp':''}" data-li="${esc(x.key)}">${x.isDone?'済 ':''}${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}</button>`};
   const colT=limit.times.map((t,ti)=>{const l=L.filter(x=>x.ti===ti);return{h:l.reduce((a,x)=>a+(x.it.h||0),0),n:l.length}});
   b.innerHTML=`<div class="lp"><div class="t">${esc(limit.title||'リミット表')}　今日の進み具合 <b>${done.length}</b> / ${need.length} 件（${pc}%）</div>
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
    ${late.length?`<div class="lp" style="border-color:var(--bad)"><div class="t" style="color:var(--bad)">遅れ ${late.length} 件<span class="hint">　リミット時刻を過ぎて、まだ送信していない品番</span></div>
      <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(llabel(x.it))}</span>`).join('')}</div></div>`:''}
-   <div class="hint">品番をタップ → 箱数を入れて「送信」で済になります（${esc(SN(0))}の画面から送信しても、自動で済が付きます）。赤＝リミット時刻を過ぎて未完了</div>
+   <div class="hint">品番をタップ → ${esc(SN(0))}の登録画面が開きます（掛けた箱数がのこり0になると「済」）。赤＝リミット時刻を過ぎて未完了</div>
    <div class="row" style="align-items:center;gap:.5rem"><button class="btn sm" id="lPrev">前日の配置に戻す</button><button class="btn sm" id="lSavePrev">今の配置を保存</button><button class="btn sm" id="lReset">Excelの並びに戻す</button>${m.removed.length?`<button class="btn sm" id="lRem">外した品番（${m.removed.length}）</button>`:''}<span class="lzoom"><button class="btn sm" id="lzOut" aria-label="縮小">－</button><span id="lzLbl">100%</span><button class="btn sm" id="lzIn" aria-label="拡大">＋</button><button class="btn sm" id="lzFit">全体</button></span><button class="btn ok" id="lXlsx" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button></div>
    <div class="hint">${esc(lePrevLabel())}</div>
    <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力</div>
    <div class="lwrap"><div id="lzbox"><table class="lt"><tr><th>エリア</th>${limit.times.map((t,i)=>`<th class="${i===nx?'now':''}">${hm0(t)}<small>計 ${(Math.round(colT[i].h*10)/10).toFixed(1)}h（${colT[i].n}品番）</small></th>`).join('')}</tr>
    ${limit.areas.map((a,ai)=>`<tr><td class="ar">${esc(a.area)}</td>${limit.times.map((t,ti)=>`<td data-ai="${ai}" data-ti="${ti}">${L.filter(x=>x.ai===ai&&x.ti===ti).map(cell).join('')}</td>`).join('')}</tr>`).join('')}</table></div></div>`;
   applyLimitZoom();
-}
-function openLimitItem(key){
-  const x=limitState().find(y=>y.key===key);if(!x)return;
-  const it=x.it,j=x.job,t0=Date.now(),head=`<h3>${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}</h3><div class="big">${esc(llabel(it))}</div>
-    <div style="color:var(--mut)">ハンガー ${esc(it.hanger||'―')}　／　必要時間 (${(it.h||0).toFixed(1)}h)　／　${esc(QL())} ${it.qty===''?'―':it.qty}</div>`;
-  if(j){openModal(head+`<div class="msgok" style="margin-top:.7rem;font-size:1.3rem;font-weight:900;color:var(--kensa)">済　${fn(j.qty??j.n)}箱　${hm(j.t1)} 送信（${esc(j.tab||'')}）</div><div class="foot"><button class="btn ghost" data-close>とじる</button></div>`);return}
-  openModal(head+`<div class="hr" style="margin-top:.7rem"><label class="w">箱数（かんばん枚数）<input id="lBox" type="number" min="1" step="1" inputmode="numeric"></label></div>
-    <div class="foot"><button class="btn ghost" data-close>もどる</button><button class="btn ok" id="lOk">送信（${esc(SN(2))}へ）</button></div>`,()=>{
-    $('#lBox').focus();$('#lBox').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#lOk').click()}};
-    $('#lOk').onclick=()=>{const n=+$('#lBox').value;
-      if($('#lBox').value===''||!Number.isInteger(n)||n<1){alert('箱数（かんばん枚数）を1以上の整数で入れてください');return}
-      const now=Date.now(),id='H-'+S.name+'-'+now+'-L-'+Math.random().toString(36).slice(2,5);
-      closeModal();upsert({id,tab:S.name,hin:it.part,sei:'',maker:'',qty:n,n,nq:n,ins:0,t0,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[]});
-      toast(it.part+' '+n+'箱を'+SN(2)+'へ送りました',()=>{const k=jobs[id];if(k){k.st='cancel';upsert(k)}})};
-  });
 }
 /* ---- 分割の画面・手入力の画面・外した品番の画面 ---- */
 let lopenedAt=0;const ltooSoon=()=>performance.now()-lopenedAt<400;   /* 長押しの指を離した直後の押しまちがい防止 */
@@ -1220,7 +1236,7 @@ function exportLimitXlsx(){
   t.addEventListener('touchend',e=>{if(lpinch&&e.touches.length<2){lpinch=null;save('limitZoom',limitZoom)}});
   t.addEventListener('click',e=>{
     if(performance.now()-ljust<500)return;
-    const li=e.target.closest('.li[data-li]');if(li){openLimitItem(li.dataset.li);return}
+    const li=e.target.closest('.li[data-li]');if(li){openKake(li.dataset.li);return}
     if(e.target.closest('#lReset')){if(confirm('並び順・外した品番・分割を、Excelから取り込んだときの元の状態に戻しますか？\n（手入力した品番は残ります）'))leReset();return}
     if(e.target.closest('#lRem')){openLimitRemoved();return}
     if(e.target.closest('#lPrev')){openLimitPrev();return}
@@ -1237,7 +1253,7 @@ function exportLimitXlsx(){
 let jdate=ymd(Date.now()),jrows=[],jselMode=false,jsel=new Set(),jsh=null;
 function jShell(){
   const b=$('#jissekiBody');
-  b.innerHTML=`<div class="row" style="align-items:center"><input type="date" id="jd" value="${jdate}"><button class="btn sm" id="jgo">表示</button><button class="btn ok" id="jxl" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button>${jselMode?'':'<button class="btn sm" id="jDelMode" style="color:var(--bad);border-color:#fca5a5">削除</button>'}<span id="jmsg" style="color:var(--mut)"></span></div>
+  b.innerHTML=`<div id="jchart" class="lp"></div><div class="row" style="align-items:center"><input type="date" id="jd" value="${jdate}"><button class="btn sm" id="jgo">表示</button><button class="btn ok" id="jxl" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button>${jselMode?'':'<button class="btn sm" id="jDelMode" style="color:var(--bad);border-color:#fca5a5">削除</button>'}<span id="jmsg" style="color:var(--mut)"></span></div>
    ${jselMode?`<div class="jbar"><span>消すデータを選んでください　選んだ <b id="jN">0</b> 件</span><button class="btn sm" id="jSelAll">すべて選ぶ／はずす</button><button class="btn red" id="jDelGo" disabled>選んだものを削除</button><button class="btn ghost" id="jDelCancel">やめる</button></div>`:''}<div id="jtab"></div>`;
   $('#jd').onchange=e=>{jdate=e.target.value;jsel.clear();renderJisseki()};
   $('#jgo').onclick=renderJisseki;$('#jxl').onclick=()=>exportExcel(jdate,jrows);
@@ -1247,19 +1263,58 @@ function jRefreshSel(){   /* 選んだ状態を、表を作り直さずに反映
   const n=jsel.size;if($('#jN'))$('#jN').textContent=n;if($('#jDelGo'))$('#jDelGo').disabled=!n;
 }
 function jDraw(){
-  if(!jsh)return;const sh=jsh,R=sh.rows.slice(3),H=sh.rows[2],G=[1,6,11,16];
-  const td=(v,i)=>`<td class="${typeof v==='number'?'n':''}${G.includes(i)?' gl':''}${(i-1)%5===0&&i<16||i===16?' tb':''}">${esc(v)}</td>`;
+  if(!jsh)return;const sh=jsh,R=sh.rows.slice(3),H=sh.rows[2],G=[1,8,13,20],DI=[7,19];
+  const td=(v,i)=>`<td class="${typeof v==='number'?'n':''}${G.includes(i)?' gl tb':''}${DI.includes(i)&&typeof v==='number'?(v>0?' dpl':v<0?' dmi':''):''}">${esc(DI.includes(i)&&typeof v==='number'&&v>0?'+'+v:v)}</td>`;
+  const dc=dayCalc(jrows),fm=o=>o.a>0?`<b>${effOf(o)}%</b>（正味 ${fmtn(o.w)}分 ÷ 実績 ${fmtn(o.a)}分）`:'―';
+  const sumH=`<div class="lp" style="margin-top:.6rem"><div class="t" style="font-size:1.05rem">${esc(jdate)} の能率　${esc(SN(0))} ${fm(dc.k)}　${esc(SN(3))} ${fm(dc.i)}　全体 ${fm(dc.t)}</div></div>`;
   /* Excelの「実績」シートと同じ内容を画面に表示（タブレットごと・工程ごとに横並び） */
-  $('#jtab').innerHTML=R.length?`<div style="overflow:auto;margin-top:.8rem"><table class="jt">
-    <tr>${jselMode?'<th rowspan="2">選択</th>':''}<th rowspan="2">No</th><th colspan="5" class="g1">${esc(SN(0))}</th><th colspan="5" class="g2">${esc(SN(2))}</th><th colspan="5" class="g3">${esc(SN(3))}</th><th colspan="4" class="g4">異常記録</th></tr>
-    <tr>${H.slice(1).map((h,k)=>`<th class="${G.includes(k+1)?'gl':''}">${esc(String(h).replace('（分/箱）','').replace('（かんばん枚数）','')).replace('出来高','出来高<br><small>(分/箱)</small>')}</th>`).join('')}</tr>
+  $('#jtab').innerHTML=R.length?`${sumH}<div style="overflow:auto;margin-top:.8rem"><table class="jt">
+    <tr>${jselMode?'<th rowspan="2">選択</th>':''}<th rowspan="2">No</th><th colspan="7" class="g1">${esc(SN(0))}</th><th colspan="5" class="g2">${esc(SN(2))}</th><th colspan="7" class="g3">${esc(SN(3))}</th><th colspan="4" class="g4">異常記録</th></tr>
+    <tr>${H.slice(1).map((h,k)=>`<th class="${G.includes(k+1)?'gl':''}">${esc(String(h).replace('（かんばん枚数）','').replace('１箱当たり','')).replace('（分/箱）','<br><small>(分/箱)</small>').replace('（分）','<br><small>(分)</small>')}</th>`).join('')}</tr>
     ${R.map((r,k)=>{const id=sh.ids[k];return `<tr data-jid="${esc(id)}" class="${jselMode&&jsel.has(id)?'jsel':''}">${jselMode?`<td class="jck"><input type="checkbox" data-jsel="${esc(id)}" ${jsel.has(id)?'checked':''}></td>`:''}${r.map((v,i)=>td(v,i)).join('')}</tr>`}).join('')}
   </table></div><div class="hint" style="margin-top:.4rem">1行＝1つの品番の流れ（かんばん枚数はまとめて箱数で表示）。各工程の「タブレット」はその工程でボタンを押したタブレット。この画面は1分ごとに自動で更新します。<br>まちがえたデータは、上の「削除」ボタンで選んで消せます（まとめて消せます・パスワードが必要です）。</div>`
   :'<div class="empty">この日の実績はありません</div>';
   jRefreshSel();
 }
+/* ---- 日当たりの能率推移（直近30日の折れ線：掛け・検査・全体。能率＝正味÷実績） ---- */
+const chartCache={at:0,rows:null,note:''};
+async function loadChartRows(){
+  const now=Date.now(),to=ymd(now),from=ymd(now-29*864e5),local=()=>Object.values(jobs).filter(j=>j.t1&&stg(j)>=2&&stg(j)<9);
+  if(!live())return{rows:local(),note:'テストモードは、この端末にある2日ぶんだけ'};
+  try{const j=await gas('GET',{action:'range',from,to});return{rows:j.jobs,note:''}}
+  catch(e){return{rows:null,note:'過去の日を読むには、Apps Script（Code.gs）を新しい版に貼り直してください'}}
+}
+function chartDays(){
+  const td=ymd(Date.now()),now=Date.now(),loc=Object.values(jobs).filter(j=>j.t1&&stg(j)>=2&&stg(j)<9),past=(chartCache.rows||[]).filter(j=>j.t1&&ymd(j.t1)<td);
+  const all=past.concat(loc.filter(j=>ymd(j.t1)>=td||!chartCache.rows)),days=[];
+  const seen=new Set(),rows=[];all.forEach(j=>{const k=j.id+'|'+ymd(j.t1);if(seen.has(j.id))return;seen.add(j.id);rows.push(j)});
+  for(let i=29;i>=0;i--){const d=ymd(now-i*864e5),dc=dayCalc(rows.filter(j=>ymd(j.t1)===d));days.push({d,k:effOf(dc.k),i:effOf(dc.i),t:effOf(dc.t),dc})}
+  return days;
+}
+function chartHtml(days,sel,note){
+  const W=760,H=250,L=42,R=12,T=14,B=30,pw=W-L-R,ph=H-T-B,vals=days.flatMap(d=>[d.k,d.i,d.t]).filter(v=>v!=null),vmax=Math.max(120,Math.ceil(Math.max(0,...vals)/20)*20);
+  const x=i=>L+pw*(i/(days.length-1)),y=v=>T+ph*(1-v/vmax),COL={k:'#6d28d9',i:'#15803d',t:'#0f172a'},NM={k:SN(0),i:SN(3),t:'全体'};
+  const grid=[];for(let v=0;v<=vmax;v+=20)grid.push(`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="${v===100?'#dc2626':'#e2e8f0'}" ${v===100?'stroke-dasharray="5 4" stroke-width="1.5"':''}/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#64748b">${v}%</text>`);
+  const line=key=>{let d='',pen=false;days.forEach((o,i)=>{if(o[key]==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(o[key]).toFixed(1)+' ';pen=true});return `<path d="${d}" fill="none" stroke="${COL[key]}" stroke-width="2.4" stroke-linejoin="round"/>`+days.map((o,i)=>o[key]==null?'':`<circle cx="${x(i).toFixed(1)}" cy="${y(o[key]).toFixed(1)}" r="3.6" fill="${COL[key]}"/>`).join('')};
+  const si=days.findIndex(o=>o.d===sel),bw=pw/(days.length-1);
+  const xl=days.map((o,i)=>i%5===4||i===days.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#64748b">${+o.d.slice(5,7)}/${+o.d.slice(8)}</text>`:'').join('');
+  const hit=days.map((o,i)=>`<rect data-cd="${o.d}" x="${(x(i)-bw/2).toFixed(1)}" y="${T}" width="${bw.toFixed(1)}" height="${ph}" fill="transparent" style="cursor:pointer"/>`).join('');
+  const o=days.find(d=>d.d===sel)||days[days.length-1],fm=(k,c)=>c.a>0?`${NM[k]} <b>${effOf(c)}%</b>（正味 ${fmtn(c.w)}分／実績 ${fmtn(c.a)}分）`:`${NM[k]} ―`;
+  return `<div class="t" style="font-size:1.15rem">日当たりの能率推移（直近30日）<span class="hint">　能率＝正味時間÷実績時間。100%以上が目標。点を押すと、その日の実績表に切りかえます</span></div>
+   <div class="lch" style="margin:.2rem 0">${['k','i','t'].map(k=>`<span style="border-color:${COL[k]};color:${COL[k]}">● ${esc(NM[k])}</span>`).join('')}</div>
+   <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-height:300px;background:#fff;border-radius:.6rem" role="img" aria-label="日当たりの能率推移">${grid.join('')}${si>=0?`<rect x="${(x(si)-bw/2).toFixed(1)}" y="${T}" width="${bw.toFixed(1)}" height="${ph}" fill="#fde68a" opacity=".55"/>`:''}${xl}${line('t')}${line('k')}${line('i')}${hit}</svg>
+   <div style="margin-top:.2rem;font-size:1rem">${esc(o.d)}　${fm('k',o.dc.k)}　${fm('i',o.dc.i)}　${fm('t',o.dc.t)}</div>${note?`<div class="hint">${esc(note)}</div>`:''}`;
+}
+async function drawJchart(force){
+  const el=$('#jchart');if(!el)return;
+  if(force||!chartCache.rows&&!chartCache.note||Date.now()-chartCache.at>300000){
+    el.innerHTML='<div class="t" style="font-size:1.15rem">日当たりの能率推移（直近30日）<span class="hint">　読み込み中…</span></div>';
+    const r=await loadChartRows();chartCache.at=Date.now();chartCache.rows=r.rows;chartCache.note=r.note;
+  }
+  const e2=$('#jchart');if(!e2)return;e2.innerHTML=chartHtml(chartDays(),jdate,chartCache.note);
+}
 async function renderJisseki(){
-  jShell();
+  jShell();drawJchart();
   $('#jmsg').textContent='読み込み中…';
   jrows=(await listByDate(jdate)).sort((a,b)=>a.t1-b.t1);$('#jmsg').textContent='';
   jsh=jissekiSheet(jdate,jrows,andonLog);
@@ -1339,24 +1394,40 @@ function buildXlsx(sheets){
   ]);
 }
 /* 実績シート：1行＝1つの品番の流れ。各工程の欄に「ボタンを押したタブレット」を出す。通っていない工程は空欄（検査のみなら検査の欄だけ） */
+/* 正味時間＝基準時間（秒/個）×収容数×箱数（掛け＝基準×素材の収容数、検査＝検査×塗完品の収容数）。実績時間＝開始〜終了の合計。差異＝実績−正味（プラス＝遅れ）。能率＝正味÷実績 */
+const r1x=v=>Math.round(v*10)/10;
+function jobCalc(j){
+  const sd=stdOf(j.hin),R={n1:0,a1:null,w1:null,n3:0,a3:null,w3:null};   /* n＝箱数、a＝実績(分)、w＝正味(分)。1＝掛け、3＝検査 */
+  if(!j.only){const k=kakeRange(j);R.n1=boxesOf(j);if(k[0]&&k[1]&&k[1]>=k[0])R.a1=(k[1]-k[0])/60000;if(sd&&sd.k!=null&&sd.qk!=null)R.w1=R.n1*sd.k*sd.qk/60}
+  const ses=j.ses||[];
+  if(ses.length){R.n3=ses.reduce((t,c)=>t+(+c[2]||0),0);R.a3=ses.reduce((t,c)=>t+(c[1]-c[0]),0)/60000;if(sd&&sd.i!=null&&sd.qi!=null)R.w3=R.n3*sd.i*sd.qi/60}
+  return R;
+}
+function dayCalc(rows){   /* 正味と実績の両方がある分だけ合計して、能率を出す */
+  const o={k:{w:0,a:0,n:0},i:{w:0,a:0,n:0}};
+  rows.forEach(j=>{if(j.st==='cancel'||stg(j)<2||stg(j)>=9)return;const c=jobCalc(j);
+    if(c.w1!=null&&c.a1>0){o.k.w+=c.w1;o.k.a+=c.a1;o.k.n+=c.n1}   /* 実績時間が0分（開始＝終了）のものは能率に入れない */
+    if(c.w3!=null&&c.a3>0){o.i.w+=c.w3;o.i.a+=c.a3;o.i.n+=c.n3}});
+  o.t={w:o.k.w+o.i.w,a:o.k.a+o.i.a};return o;
+}
+const effOf=o=>o&&o.a>0?Math.round(o.w/o.a*1000)/10:null;   /* 能率（％） */
 const rng=(a,b)=>a&&b?hm(a)+'～'+hm(b):'';
 const perBox=(ms,n)=>n>0&&ms>0?Math.round(ms/60000/n*10)/10:'';
 function jissekiSheet(date,rows,andons){
   rows=rows.filter(j=>j.st!=='cancel');
   andons=andons.filter(a=>a.st!=='cancel');   /* 取り消した・削除した呼び出しは実績に出さない（Excelの「呼び出し記録」には「取消」として残る） */
-  const E5=['','','','',''];
-  const out=[[`実績　${date}`],['',SN(0),'','','','',SN(2),'','','','',SN(3),'','','','','異常記録','','',''],
-    ['No','タブレット','品番・背番','箱数（かんばん枚数）','時間','１箱当たり出来高（分/箱）','タブレット','品番・背番','箱数（かんばん枚数）','時間','１箱当たり出来高（分/箱）','タブレット','品番・背番','箱数（かんばん枚数）','時間','１箱当たり出来高（分/箱）','タブレット','品番','数量','選択項目']];
+  const E5=['','','','',''],E7=['','','','','','',''],V=v=>v==null?'':r1x(v),Df=(a,w)=>a!=null&&w!=null?r1x(a-w):'';
+  const out=[[`実績　${date}`],['',SN(0),'','','','','','',SN(2),'','','','',SN(3),'','','','','','','異常記録','','',''],
+    ['No','タブレット','品番・背番','箱数（かんばん枚数）','時間','正味時間（分）','実績時間（分）','差異（分）','タブレット','品番・背番','箱数（かんばん枚数）','時間','１箱当たり出来高（分/箱）','タブレット','品番・背番','箱数（かんばん枚数）','時間','正味時間（分）','実績時間（分）','差異（分）','タブレット','品番','数量','選択項目']];
   const L=rows.map(j=>({k:j.only?j.tp:(j.t1||j.tp),j})).concat(andons.map(a=>({k:a.tp,a}))).sort((x,y)=>x.k-y.k);
   let no=0;const ids=[];
   L.forEach(({j,a})=>{
     no++;ids.push((a||j).id);
-    if(a){out.push([no,...E5,...E5,...E5,a.tab,'','','呼び出し：'+a.hin+(a.td?'（対応 '+hm(a.td)+' '+(a.sei||'')+'）':'（未対応）')]);return}
-    const n1=+(j.qty??j.n),n2=+(j.n2??j.n),n3=+j.ins||0;
-    const b1=j.only?E5:[j.tab,j.hin,n1,rng(j.t0,j.t1),perBox(j.t1-j.t0,n1)];
+    if(a){out.push([no,...E7,...E5,...E7,a.tab,'','','呼び出し：'+a.hin+(a.td?'（対応 '+hm(a.td)+' '+(a.sei||'')+'）':'（未対応）')]);return}
+    const n1=+(j.qty??j.n),n2=+(j.n2??j.n),n3=+j.ins||0,c=jobCalc(j),kr=kakeRange(j);
+    const b1=j.only?E7:[j.tab,j.hin,n1,rng(kr[0],kr[1]),V(c.w1),V(c.a1),Df(c.a1,c.w1)];
     const b2=j.ta2?[j.tab2||'',j.hin,n2,rng(j.t1,j.ta2),perBox(j.ta2-j.t1,n2)]:E5;
-    const ms=(j.ses||[]).reduce((x,c)=>x+(c[1]-c[0]),0);
-    const b3=(j.ses&&j.ses.length)?[j.tab3||'',j.hin+(j.only?'（検査のみ）':''),n3,rng(j.ses[0][0],j.ses[j.ses.length-1][1]),perBox(ms,n3)]:(j.only?[j.tab0||'',j.hin+'（検査のみ）','','','']:E5);
+    const b3=(j.ses&&j.ses.length)?[j.tab3||'',j.hin+(j.only?'（検査のみ）':''),n3,rng(j.ses[0][0],j.ses[j.ses.length-1][1]),V(c.w3),V(c.a3),Df(c.a3,c.w3)]:(j.only?[j.tab0||'',j.hin+'（検査のみ）','','','','','']:E7);
     const ev=[];(j.adj||[]).forEach(x=>ev.push([x[0],x[4]||j.tab3||'',x[2]+' '+(x[1]>0?'+':'')+x[1]+(x[3]?'（'+x[3]+'）':'')]));
     (j.paus||[]).forEach(p=>ev.push([p[0],p[1],'一時中断']));
     if(j.only)ev.push([j.tp,j.tab0||'','検査のみ入力 '+n1+'箱']);
@@ -1365,17 +1436,28 @@ function jissekiSheet(date,rows,andons){
     const b4=ev.length?[[...new Set(ev.map(e=>e[1]).filter(Boolean))].join('／'),j.hin,(j.adj||[]).length?dsum:'',ev.map(e=>e[2]).join(' ／ ')]:['','','',''];
     out.push([no,...b1,...b2,...b3,...b4]);
   });
-  return {name:'実績',ids,rows:out,widths:[5,12,14,10,14,12,12,14,10,14,12,12,16,10,14,12,14,14,8,34],o:{title:0,hdr:[1,2],freeze:3,merges:['B2:F2','G2:K2','L2:P2','Q2:T2']}};
+  return {name:'実績',ids,rows:out,widths:[5,12,14,10,14,10,10,9,12,14,10,14,12,12,16,10,14,10,10,9,14,14,8,34],o:{title:0,hdr:[1,2],freeze:3,merges:['B2:H2','I2:M2','N2:T2','U2:X2']}};
 }
 const esc0=x=>x;
 function exportExcel(date,rows){
   if(!rows.length&&!andonLog.length){toast('この日の実績はありません');return}
-  const agg=aggregate(rows);
-  const detail=[['日付','タブレット名','品番','協豊背番号','箱数（かんばん枚数）','うちQRなし','開始（最初のQR読取）','完了','作業時間（分）','到着予定','準備OK','検査完了','状態','メーカー','送信時の箱数','検査済み箱数','不良','前工程の数が違う','ハンド入力（増減）','修正の記録']]
-   .concat(rows.map(j=>[ymd(j.t1),j.tab,j.hin,j.sei||'',j.n,j.nq||0,hm(j.t0),hm(j.t1),Math.round((j.t1-j.t0)/6000)/10,hm(j.eta),j.tr?hm(j.tr):'',j.td?hm(j.td):'',stLabel(j),j.maker||'',j.qty==null?'':j.qty,+j.ins||0,...FIXR.map(r=>(j.adj||[]).filter(a=>a[2]===r).reduce((t,a)=>t+a[1],0)),(j.adj||[]).map(a=>hm(a[0])+' '+a[2]+' '+(a[1]>0?'+':'')+a[1]+(a[3]?'（'+a[3]+'）':'')).join(' / ')]));
+  const V=v=>v==null?'':r1x(v),Df=(a,w)=>a!=null&&w!=null?r1x(a-w):'';
+  const head=['日付','タブレット名','品番','協豊背番号','箱数（かんばん枚数）','うちQRなし','開始（掛け開始）','完了（送信）','作業時間（分）','到着予定','準備OK','検査完了','状態','メーカー','送信時の箱数','検査済み箱数','不良','前工程の数が違う','ハンド入力（増減）','掛け箱数','掛け正味時間（分）','掛け実績時間（分）','掛け差異（分）','検査箱数','検査正味時間（分）','検査実績時間（分）','検査差異（分）','修正の記録'];
+  const detail=[head].concat(rows.map(j=>{const c=jobCalc(j),kr=kakeRange(j);
+    return [ymd(j.t1),j.tab,j.hin,j.sei||'',j.n,j.nq||0,hm(kr[0]),hm(kr[1]),Math.round((kr[1]-kr[0])/6000)/10,hm(j.eta),j.tr?hm(j.tr):'',j.td?hm(j.td):'',stLabel(j),j.maker||'',j.qty==null?'':j.qty,+j.ins||0,...FIXR.map(r=>(j.adj||[]).filter(a=>a[2]===r).reduce((t,a)=>t+a[1],0)),
+      c.n1,V(c.w1),V(c.a1),Df(c.a1,c.w1),c.n3,V(c.w3),V(c.a3),Df(c.a3,c.w3),
+      (j.adj||[]).map(a=>hm(a[0])+' '+a[2]+' '+(a[1]>0?'+':'')+a[1]+(a[3]?'（'+a[3]+'）':'')).join(' / ')]}));
+  /* 品番単位の合計：正味時間と実績時間（正味と実績の両方がある分だけ）・差異・能率 */
+  const by={};rows.forEach(j=>{if(j.st==='cancel'||stg(j)<2||stg(j)>=9)return;const c=jobCalc(j),k=nh(j.hin),o=by[k]=by[k]||{hin:j.hin,k:{n:0,w:0,a:0},i:{n:0,w:0,a:0}};
+    if(c.w1!=null&&c.a1>0){o.k.n+=c.n1;o.k.w+=c.w1;o.k.a+=c.a1}
+    if(c.w3!=null&&c.a3>0){o.i.n+=c.n3;o.i.w+=c.w3;o.i.a+=c.a3}});
+  const E=(w,a)=>a>0?r1x(w/a*100):'',line=(name,o)=>[name,o.k.n,r1x(o.k.w),r1x(o.k.a),r1x(o.k.a-o.k.w),E(o.k.w,o.k.a),o.i.n,r1x(o.i.w),r1x(o.i.a),r1x(o.i.a-o.i.w),E(o.i.w,o.i.a),r1x(o.k.w+o.i.w),r1x(o.k.a+o.i.a),r1x(o.k.a+o.i.a-o.k.w-o.i.w),E(o.k.w+o.i.w,o.k.a+o.i.a)];
+  const tot={k:{n:0,w:0,a:0},i:{n:0,w:0,a:0}},rowsP=Object.keys(by).sort().filter(k=>by[k].k.a>0||by[k].i.a>0).map(k=>{const o=by[k];['k','i'].forEach(t=>{tot[t].n+=o[t].n;tot[t].w+=o[t].w;tot[t].a+=o[t].a});return line(o.hin,o)});
+  const sumSheet={name:'品番別合計',rows:[['品番','掛け箱数','掛け正味時間（分）','掛け実績時間（分）','掛け差異（分）','掛け能率（％）','検査箱数','検査正味時間（分）','検査実績時間（分）','検査差異（分）','検査能率（％）','合計正味時間（分）','合計実績時間（分）','合計差異（分）','合計能率（％）']].concat(rowsP,[line('合計',tot)]),widths:[16,10,14,14,12,12,10,14,14,12,12,14,14,12,12]};
   const blob=buildXlsx([
    jissekiSheet(date,rows,andonLog),
-   {name:'実績明細',rows:detail,widths:[12,14,14,14,12,10,20,8,14,10,10,10,14,14,14,14,8,16,14,30]},
+   {name:'実績明細',rows:detail,widths:[12,14,14,14,12,10,16,12,14,10,10,10,14,14,14,14,8,16,14,10,14,14,12,10,14,14,12,30]},
+   sumSheet,
    {name:'呼び出し記録',rows:[['日付','呼び出し時刻','工程','タブレット名','理由','対応時刻','対応者','対応までの時間（分）','状態']].concat(andonLog.sort((a,b)=>a.tp-b.tp).map(j=>[ymd(j.tp),hm(j.tp),j.maker||'',j.tab,j.hin,j.td?hm(j.td):'',j.sei||'',j.td?Math.round((j.td-j.tp)/6000)/10:'',j.st==='done'?'対応済み':j.st==='cancel'?'取消':'呼出中'])),widths:[12,12,14,14,14,10,14,18,10]}]);
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='実績_'+date+'.xlsx';document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
@@ -1534,7 +1616,7 @@ function openSettings(){
   <div class="f"><label>テストデータ</label><button class="btn sm" id="sClr">テストの記録を全部消す</button></div>
   <div class="foot"><button class="btn ghost" data-close>とじる</button><button class="btn fin" id="sSave">保存</button></div>`,()=>{
     $('#sSave').onclick=()=>{
-      S.name=$('#sName').value.trim()||'タブレット1';S.sn=[0,1,2,3].map(i=>($('#sn'+i)&&$('#sn'+i).value.trim())||SN(i));d1Built=false;S.role=$('#sRole').value;S.mode=$('#sMode').value;S.split=$('#sSplit').value==='1';S.lay=$('#sLay').value;
+      S.name=$('#sName').value.trim()||'タブレット1';S.sn=[0,1,2,3].map(i=>($('#sn'+i)&&$('#sn'+i).value.trim())||SN(i));S.role=$('#sRole').value;S.mode=$('#sMode').value;S.split=$('#sSplit').value==='1';S.lay=$('#sLay').value;
       S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;S.etaMin=+$('#sEta').value||180;S.idleMin=+$('#sIdle').value||15;S.scale=+$('#sScale').value;
       if(S.mode==='live'&&!S.gasUrl&&!onGas){alert('本番にするには Apps Script URL が必要です');return}
       if(S.mode==='live'&&!S.key){alert('本番にするには 合言葉 が必要です');return}
@@ -1568,9 +1650,9 @@ function openSettings(){
     const importMaster=async f=>{if(!f)return;
       try{const rows=await readTable(f);const m=masterFromRows(rows);
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr)}
-        if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.box=boxFromRows(rows,L)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
+        if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
         const lmsg=L?'\nリミット表 '+limitCount(L)+' 件も取り込みました':'';
-        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
+        if(m.length){master=m;save('master',master);save('masterV',Date.now());pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
     const dz=$('#sDrop');dz.onclick=()=>$('#sCsv').click();
@@ -1651,29 +1733,12 @@ kb_.addEventListener('pointerup',()=>endDrag(true));
 kb_.addEventListener('pointercancel',()=>endDrag(false));
 kb_.addEventListener('contextmenu',e=>{if(e.target.closest('.job'))e.preventDefault()});
 document.addEventListener('touchmove',e=>{if(drag&&drag.on)e.preventDefault()},{passive:false});
-$('#paneDan1').addEventListener('input',e=>{
-  const row=e.target.closest('.hr');if(!row)return;const p=plan[+row.dataset.i];if(!p)return;
-  if(!p.t0)p.t0=Date.now();
-  if(e.target.classList.contains('f-hin'))p.hin=e.target.value;else if(e.target.classList.contains('f-box'))p.box=e.target.value;
-  savePlan();updDan1();
-});
-$('#paneDan1').addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;const t=e.target;if(!t.closest('.hr'))return;e.preventDefault();
-  const row=t.closest('.hr');
-  if(t.classList.contains('f-hin'))row.querySelector('.f-box').focus();
-  else if(t.classList.contains('f-box')){if(row.matches(':last-child')&&nh(plan[+row.dataset.i].hin))addRow();else{const nx=row.nextElementSibling;if(nx)nx.querySelector('.f-hin').focus()}}
-});
-$('#paneDan1').addEventListener('click',e=>{
-  const d=e.target.closest('[data-del]');if(!d)return;
-  plan.splice(+d.dataset.del,1);if(!plan.length)plan.push({hin:'',box:''});savePlan();buildDan1();
-});
-$('#d1pick').addEventListener('click',e=>{const c=e.target.closest('[data-cu]'),k=e.target.closest('[data-pk]');
-  if(c){pickCust=c.dataset.cu||null;renderPick()}else if(k)pickItem(k.dataset.pk)});
-$('#d1sent').addEventListener('click',e=>{if(e.target.closest('#d1sentBtn')){sentOpen=!sentOpen;updDan1()}});
-$('#d1add').onclick=addRow;$('#d1ok').onclick=confirmPlan;
+$('#kBody').addEventListener('click',e=>{const r=e.target.closest('[data-kk]');if(r){openKake(r.dataset.kk);return}if(e.target.closest('#kOnlyBtn'))openKakeOnly()});
+$('#qk').addEventListener('input',renderDan1);
 $('#paneDan2').addEventListener('click',e=>{const b=e.target.closest('button[data-adv],button[data-ed]');if(!b)return;const id=b.closest('[data-id]').dataset.id;if(b.dataset.ed)openQty(id,'dan2');else advance(id)});
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;layout();renderHeader();if(view==='jisseki')renderJisseki();else renderAll()});
 $('#jissekiBody').addEventListener('click',e=>{
+  const cd=e.target.closest('[data-cd]');if(cd){jdate=cd.dataset.cd;jsel.clear();renderJisseki();return}   /* グラフの点を押す → その日の実績表 */
   if(e.target.closest('#jDelMode')){jselMode=true;jsel.clear();jShell();jDraw();return}
   if(e.target.closest('#jDelCancel')){jselMode=false;jsel.clear();jShell();jDraw();return}
   if(e.target.closest('#jSelAll')){const ids=jsh?jsh.ids:[],all=ids.length&&ids.every(i=>jsel.has(i));ids.forEach(i=>all?jsel.delete(i):jsel.add(i));jRefreshSel();return}
@@ -1686,12 +1751,12 @@ document.addEventListener('keydown',e=>{   /* パソコン：Ctrl+Z で元に戻
   if(!(e.ctrlKey||e.metaKey)||modalOpen)return;const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
   const k=e.key.toLowerCase();if(k==='z'&&!e.shiftKey){e.preventDefault();doUndo()}else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();doRedo()}});
 $('#q2').addEventListener('input',renderDan2);$('#q3').addEventListener('input',renderKensa);
-document.querySelectorAll('[data-qc]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.qc);i.value='';b.dataset.qc==='q2'?renderDan2():renderKensa();i.focus()});
+document.querySelectorAll('[data-qc]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.qc);i.value='';b.dataset.qc==='q2'?renderDan2():b.dataset.qc==='qk'?renderDan1():renderKensa();i.focus()});
 ['dragover','drop'].forEach(t=>window.addEventListener(t,e=>{if(!e.target.closest||!e.target.closest('#sDrop'))e.preventDefault()}));
 /* 手動更新：未送信を送り、最新を受け取って画面を描き直す */
 $('#btnRef').onclick=async()=>{
   if(live()){await flush();await poll();await fetchMaster()}else loadJobs();   /* 更新：品番マスタ（客先のボタン）も読み直す */
-  if(view==='jisseki')renderJisseki();else{d1Built=false;renderAll()}
+  if(view==='jisseki')renderJisseki();else renderAll()
   toast('最新の状態に更新しました（'+hm(Date.now())+'）');
 };
 $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};

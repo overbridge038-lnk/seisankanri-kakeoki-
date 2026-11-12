@@ -1,5 +1,5 @@
 /**
- * 生産管理しくみ  データ置き場（Googleスプレッドシート＋Apps Script） ver 2026-11-10b
+ * 生産管理しくみ  データ置き場（Googleスプレッドシート＋Apps Script） ver 2026-11-12i
  *
  * 【設置手順】
  * 1. 会社のGoogleアカウントで新しいスプレッドシートを作る
@@ -16,6 +16,7 @@
  * 5. シート「品番マスタ」を作り、A列=客先 / B列=名称 / C列=品番・背番 を入れる（1行目は見出し。HTMLの「ひな形」と同じ形）
  * 6. 毎日の実績Excel保存：setupDailyTrigger を1回だけ実行（Googleドライブのフォルダ名は下の EXPORT_FOLDER_NAME）
  *
+ * ※ver 2026-11-12i：日当たりの能率グラフ（直近30日）用に action=range を追加した。Apps Script に貼り直して「デプロイを管理 → 編集 → 新バージョン」で再デプロイする（貼り直さないと、グラフは今日ぶんだけになる）
  * ※項目を増やしたため、前のバージョンで作った「かんばん実績」シートがある場合は、シートを削除してから使う（自動で作り直す）
  * ※コードや index（画面）を変えたら「デプロイを管理 → 編集 → 新バージョン」で再デプロイが必要（URLは変わらない）
  */
@@ -29,6 +30,7 @@ var HEAD = ['id','日付','タブレット名','品番','協豊背番号','箱�
 var ST_OUT = {wait:'待ち', ready:'準備OK', done:'検査完了', cancel:'取消'};
 var ST_IN = {'待ち':'wait', '準備OK':'ready', '検査完了':'done', '取消':'cancel'};
 var SCAN_ROWS = 3000; // 検索・一覧で読む最大行数（新しい方から）
+var RANGE_ROWS = 20000; // 能率グラフ（直近30日）で読む最大行数
 
 function json_(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function sheet_(){
@@ -63,10 +65,10 @@ function rowToJob_(r){
 }
 function safeParse_(t){ try { return JSON.parse(t); } catch (e) { return []; } }
 
-function readRows_(s){
+function readRows_(s, max){
   var last = s.getLastRow();
   if (last < 2) return {start: 2, rows: []};
-  var start = Math.max(2, last - SCAN_ROWS + 1);
+  var start = Math.max(2, last - (max || SCAN_ROWS) + 1);
   return {start: start, rows: s.getRange(start, 1, last - start + 1, HEAD.length).getValues()};
 }
 
@@ -131,6 +133,15 @@ function get_(p){
         return date ? ymd_(j.t1 || j.tp) === date : ((j.st !== 'done' && j.st !== 'cancel') || (j.td || j.t1 || j.tp) >= lim);
       });
       return {ok: true, jobs: out};
+    }
+    if (a === 'range') {   // 日当たりの能率グラフ用：from〜to（yyyy-MM-dd）に送信した品番（検査用段取り以降）。必要な項目だけ返す
+      var from = p.from, to = p.to;
+      var res = readRows_(sheet_(), RANGE_ROWS).rows.filter(function(r){ return r[0] !== ''; }).map(rowToJob_).filter(function(j){
+        var st = Number(j.stage);
+        if (!(st >= 2 && st < 9) || !j.t1 || j.st === 'cancel') return false;
+        var d = ymd_(j.t1); return d >= from && d <= to;
+      }).map(function(j){ return {id: j.id, hin: j.hin, qty: j.qty, n: j.n, t0: j.t0, t1: j.t1, kb: j.kb, ses: j.ses, ins: j.ins, only: j.only, st: j.st, stage: j.stage, tab: j.tab}; });
+      return {ok: true, jobs: res};
     }
     return {ok: false, error: 'unknown action'};
   } catch (err) { return {ok: false, error: String(err)}; }
