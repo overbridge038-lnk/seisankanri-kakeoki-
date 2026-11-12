@@ -293,7 +293,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12j</span>
+    <span class="ver">ver 2026-11-12k</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -333,7 +333,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12j';
+const VER='2026-11-12k';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -1102,13 +1102,11 @@ function limitState(){
   Object.values(jobs).filter(j=>j.t1&&!j.only&&!isEx(j)&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));   /* 突発は数えない */
   const L=[];m.order.forEach((cols,ai)=>cols.forEach((list,ti)=>list.forEach((k,i)=>L.push({ai,ti,i,key:k,it:m.units[k]}))));
   const by={};L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{(by[nh(x.it.part)]=by[nh(x.it.part)]||[]).push(x)});
-  Object.keys(by).forEach(k=>{const us=by[k],js=q[k]||[],rest=js.map(boxesOf);let ji=0;
-    us.forEach(x=>{const need=x.it.qty>0?+x.it.qty:0,want=need>0?need:Infinity;let got=0,last=null;
-      while(ji<js.length&&got<want){if(rest[ji]<=0){ji++;continue}const t=Math.min(rest[ji],want-got);got+=t;rest[ji]-=t;last=js[ji]}
-      x.need=need;x.done=got;x.last=last;x.rem=need>0?Math.max(0,need-got):0});
-    let left=0;for(let i=ji;i<js.length;i++)left+=Math.max(0,rest[i]);
-    if(left>0&&us.length){const lu=us[us.length-1];lu.done+=left;lu.last=js[js.length-1]}});   /* 必要数を超えた分は、最後の札に足す */
-  L.forEach(x=>{x.nop=!(x.it.qty>0)&&!x.it.hand;x.isDone=x.need>0?x.done>=x.need:x.done>0;x.job=x.isDone?x.last:null;x.late=!x.isDone&&!x.nop&&nowM>limit.times[x.ti]});
+  /* 済＝その品番を検査用段取りへ1回送ったら、リミットの早い札から1つずつ済にする（必要数に届かなくてもよい。2回仕掛けは札を2つに分けておく） */
+  Object.keys(by).forEach(k=>{const js=q[k]||[];let ji=0;
+    by[k].forEach(x=>{x.need=0;x.done=0;x.rem=0;x.last=null;if(!(x.it.qty>0)&&!x.it.hand)return;   /* 生産なしの札は数えない */
+      if(ji<js.length){x.done=1;x.last=js[ji++]}})});
+  L.forEach(x=>{x.nop=!(x.it.qty>0)&&!x.it.hand;x.isDone=x.done>0;x.job=x.isDone?x.last:null;x.late=!x.isDone&&!x.nop&&nowM>limit.times[x.ti]});
   L.model=m;return L;
 }
 function renderLimit(){
@@ -1126,7 +1124,7 @@ function renderLimit(){
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
    ${late.length?`<div class="lp" style="border-color:var(--bad)"><div class="t" style="color:var(--bad)">遅れ ${late.length} 件<span class="hint">　リミット時刻を過ぎて、まだ送信していない品番</span></div>
      <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(llabel(x.it))}</span>`).join('')}</div></div>`:''}
-   <div class="hint">品番をタップ → ${esc(SN(0))}の入力欄にその品番が入ります（掛けた箱数がのこり0になると「済」）。赤＝リミット時刻を過ぎて未完了</div>
+   <div class="hint">品番をタップ → ${esc(SN(0))}の入力欄にその品番が入ります（1回送ると「済」）。赤＝リミット時刻を過ぎて未完了</div>
    <div class="row" style="align-items:center;gap:.5rem"><button class="btn sm" id="lPrev">前日の配置に戻す</button><button class="btn sm" id="lSavePrev">今の配置を保存</button><button class="btn sm" id="lReset">Excelの並びに戻す</button>${m.removed.length?`<button class="btn sm" id="lRem">外した品番（${m.removed.length}）</button>`:''}<span class="lzoom"><button class="btn sm" id="lzOut" aria-label="縮小">－</button><span id="lzLbl">100%</span><button class="btn sm" id="lzIn" aria-label="拡大">＋</button><button class="btn sm" id="lzFit">全体</button></span><button class="btn ok" id="lXlsx" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button></div>
    <div class="hint">${esc(lePrevLabel())}</div>
    <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力</div>
