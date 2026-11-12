@@ -300,7 +300,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12n</span>
+    <span class="ver">ver 2026-11-12o</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -340,7 +340,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12n';
+const VER='2026-11-12o';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -687,7 +687,7 @@ function openKakePri(){
     <div class="sbar2"><input id="pqIn" type="search" placeholder="品番・背番で検索" autocomplete="off" autocapitalize="characters"><button class="btn sm" id="pqClr">×</button></div>
     <div id="pqList"></div><div class="foot"><button class="btn ghost" data-close>とじる</button></div>`,()=>{
     $('#pqIn').oninput=drawKakePri;$('#pqClr').onclick=()=>{$('#pqIn').value='';drawKakePri();$('#pqIn').focus()};
-    $('#pqList').onclick=e=>{const r=e.target.closest('[data-kk]');if(r)openKake(r.dataset.kk)};
+    $('#pqList').onclick=e=>{const r=e.target.closest('[data-kk]');if(r){openKake(r.dataset.kk);kd.pri=true}};
     drawKakePri();
   });
 }
@@ -701,6 +701,11 @@ function drawKakePri(){
   tick();
 }
 let kd=null;   /* 登録画面の状態 {key,part,bx,t,ex} */
+/* 客先→品番ボタンから：登録画面（時間ホイール＋箱数）を開く。リミット表にあれば、まだ済でない札のリミットも出す */
+function openKakePart(part){
+  const p=nh(part),x=limit?limitState().filter(y=>!y.nop&&!y.isDone&&nh(y.it.part)===p).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i)[0]:null;
+  openKake(x?x.key:null,part);
+}
 function openKake(key,part,ex){const nd=new Date();kd={key:key||null,part:part||'',ex:!!ex,bx:'',t:{sH:nd.getHours(),sM:nd.getMinutes(),eH:nd.getHours(),eM:nd.getMinutes()}};openModal('<div id="kakeBox"></div>',drawKake)}
 function drawKake(){
   const box=$('#kakeBox');if(!box||!kd)return;
@@ -708,6 +713,7 @@ function drawKake(){
   const part=x?x.it.part:kd.part,btn=kd.ex?'送信（突発）':'登録する';
   const head=kd.ex?`<h3 style="color:var(--bad)">突発の入力</h3><div class="hint">計画にない掛け。客先ボタンから選ぶか、品番・背番を入れてください</div><div id="kpick"></div>
       <div class="hr" style="margin-top:.5rem"><label class="w">品番・背番<input id="kHin" autocomplete="off" autocapitalize="characters" value="${esc(kd.part)}"></label><div class="rc" id="kchips" style="grid-column:1/3">${kd.part?stdChips(kd.part,'k'):''}</div></div>`
+    :!x?`<h3>${esc(part)}${stdChips(part,'k')}</h3>`
     :`<h3>${esc(llabel(x.it))}　<span style="font-size:1rem;color:var(--mut)">${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}</span>${stdChips(part,'k',x.it.hanger)}</h3>`;
   box.innerHTML=`${head}
     <div class="reg" style="margin-top:.6rem">
@@ -742,7 +748,7 @@ function drawKake(){
     if($('#kBx').value===''||!Number.isInteger(bx)||bx<1){alert('作業した箱数を1以上の整数で入れてください');return}
     if(en===st&&!confirm('掛けた時間が0分です（開始と終了が同じ）。このまま登録しますか？\n0分のものは、能率の計算に入りません。'))return;
     const ex=kd.ex;kakeRegister({part:pt,n:bx,start:st,end:en,ex});beep(1500,.08,1);
-    closeModal();if(!ex)setTimeout(openKakePri,60);   /* 優先順番の一覧にもどる */
+    const back=kd.pri;closeModal();if(back)setTimeout(openKakePri,60);   /* 優先順番から開いたときは一覧にもどる */
   };
 }
 
@@ -1842,7 +1848,7 @@ $('#paneDan1').addEventListener('click',e=>{
   plan.splice(+d.dataset.del,1);if(!plan.length)plan.push({hin:'',box:''});savePlan();buildDan1();
 });
 $('#d1pick').addEventListener('click',e=>{const c=e.target.closest('[data-cu]'),k=e.target.closest('[data-pk]');
-  if(c){pickCust=c.dataset.cu||null;renderPick()}else if(k)pickItem(k.dataset.pk)});
+  if(c){pickCust=c.dataset.cu||null;renderPick()}else if(k)openKakePart(k.dataset.pk)});   /* 品番ボタン → 登録画面（時間と箱数） */
 $('#d1sent').addEventListener('click',e=>{if(e.target.closest('#d1sentBtn')){sentOpen=!sentOpen;updDan1()}});
 $('#d1add').onclick=addRow;$('#d1ok').onclick=confirmPlan;
 $('#kPri').onclick=openKakePri;$('#kEx').onclick=()=>openKake(null,'',true);
