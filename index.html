@@ -95,7 +95,7 @@ th,td{border:1px solid var(--line);padding:.4rem .6rem;text-align:left}
 th{background:#e2e8f0}
 .jt{font-size:.92rem;white-space:nowrap}.jt th{text-align:center;font-size:.85rem}.jt .g1{background:#ede9fe}.jt .g2{background:#f3e8ff}.jt .g3{background:#dcfce7}.jt .g4{background:#fee2e2}
 .jbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.6rem;padding:.5rem .8rem;border:2px solid var(--bad);border-radius:.7rem;background:var(--bad-bg);font-weight:800}.jbar b{color:var(--bad);font-size:1.3rem}
-.jt .jck{text-align:center}.jt .jck input{width:1.7rem;height:1.7rem}.jt tr.jsel td{background:#fecaca!important}.jt td.dpl{color:var(--bad);font-weight:800}.jt td.dmi{color:var(--kensa);font-weight:800}
+.jt .jck{text-align:center}.jt .jck input{width:1.7rem;height:1.7rem}.jt tr.jsel td{background:#fecaca!important}.jt td.exm{color:var(--bad);font-weight:800}.jt td.dpl{color:var(--bad);font-weight:800}.jt td.dmi{color:var(--kensa);font-weight:800}
 .jt .gl{border-left:3px solid #64748b}.jt .tb{font-weight:800;background:#f8fafc}
 td.n,th.n{text-align:right}
 input,select{font-size:1.05rem;padding:.5rem .7rem;border:2px solid var(--line);border-radius:.6rem;background:#fff}
@@ -161,7 +161,7 @@ main.four .now .hin{font-size:1.5rem}main.four .now .count b{font-size:3.2rem}
 .jr .t{font-weight:900}
 .jr .rem{font-size:.85rem;white-space:nowrap}
 .jr .bt{display:flex;gap:.3rem}
-.tg{display:inline-block;font-size:.72rem;font-weight:800;border-radius:.3rem;padding:0 .35rem;margin-right:.3rem;vertical-align:middle}.tg.pz{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}.tg.on1{background:#ede9fe;color:#5b21b6;border:1px solid #8b5cf6}.tg.bk{background:#dc2626;color:#fff;border:1px solid #991b1b}
+.tg{display:inline-block;font-size:.72rem;font-weight:800;border-radius:.3rem;padding:0 .35rem;margin-right:.3rem;vertical-align:middle}.tg.pz{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}.tg.on1{background:#ede9fe;color:#5b21b6;border:1px solid #8b5cf6}.tg.bk,.tg.ex{background:#dc2626;color:#fff;border:1px solid #991b1b}
 .btn.pause{background:#f59e0b;color:#111}
 #kensaBody .job.jr{cursor:pointer}.jr .go{font-size:1.3rem;font-weight:900;color:var(--mut);text-align:center}
 .ib{font-size:4.5rem;font-weight:900;line-height:1;color:var(--kensa);text-align:center}.ib small{font-size:1.6rem}
@@ -261,6 +261,15 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 #lghost{display:none;position:fixed;z-index:60;pointer-events:none;background:#1a73e8;color:#fff;font-weight:800;font-size:1.1rem;padding:.5rem .9rem;border-radius:.6rem;box-shadow:0 6px 16px rgba(0,0,0,.3)}#lghost.del{background:var(--bad)}
 #ltrash{display:none;position:fixed;z-index:60;left:50%;bottom:1.1rem;transform:translateX(-50%);align-items:center;gap:.6rem;padding:.8rem 1.6rem;border-radius:3rem;background:#fff;border:3px dashed var(--bad);color:var(--bad);font-size:1.9rem;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 #ltrash span{font-size:1rem}body.drag-on #ltrash{display:flex}#ltrash.over{background:var(--bad);color:#fff;border-style:solid;transform:translateX(-50%) scale(1.1)}
+.sbar2{display:flex;gap:.4rem;margin:.4rem 0}.sbar2 input{flex:1;min-width:0;font-size:1.1rem;font-weight:700}.sbar2 .btn{min-height:2.6rem;width:3rem;padding:0}
+.prh,.prow{display:grid;grid-template-columns:2rem minmax(5rem,1fr) 4rem 6rem 1rem;gap:.5rem;align-items:center}
+.prh{background:#e2e8f0;font-size:.8rem;font-weight:800;color:#334155;padding:.2rem .5rem;border-radius:.4rem}
+.prow{padding:.55rem .5rem;border-bottom:1px solid #e2e8f0;font-size:1.2rem;cursor:pointer}.prow .no{font-weight:800;color:var(--mut);text-align:right}.prow .h{font-weight:900}.prow .t{font-weight:900}.prow .go{font-size:1.3rem;font-weight:900;color:var(--mut)}
+.prow .ar{display:inline-block;margin-right:.35rem;padding:0 .35rem;border-radius:.3rem;background:#e2e8f0;color:#334155;font-size:.75rem;font-weight:800;vertical-align:middle}
+.prow .pc{display:inline-block;margin-left:.35rem;padding:0 .35rem;border-radius:.3rem;background:var(--kake);color:#fff;font-size:.75rem;font-weight:800;vertical-align:middle}
+.prow .rem{font-weight:800;font-size:1rem;white-space:nowrap}.prow .rem.soon{color:#c2410c}.prow .rem.late{color:var(--bad)}.prow.dn{background:#f0fdf4;color:#166534}.prow:active{background:#e0f2fe}
+.rc{min-height:0}.rc:empty{display:none}
+#kBtns{margin-bottom:.2rem;gap:.6rem}#kBtns .btn{flex:1;min-height:3.4rem;font-size:1.3rem}
 .chp{display:inline-block;margin-left:.4rem;padding:.05rem .55rem;border-radius:.5rem;background:#e0f2fe;color:#075985;font-size:.95rem;font-weight:800;vertical-align:middle;white-space:nowrap}
 .jr .ar{display:inline-block;margin-right:.3rem;padding:0 .3rem;border-radius:.3rem;background:#e2e8f0;color:#334155;font-size:.7rem;font-weight:800;vertical-align:middle}
 #main .jr.kd{background:#f0fdf4}
@@ -284,13 +293,16 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12i</span>
+    <span class="ver">ver 2026-11-12j</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
       <div class="panehead ph-dan" id="phDan1" style="display:none"></div>
-      <div class="sbar"><input id="qk" type="search" placeholder="品番・背番で検索" autocomplete="off" autocapitalize="characters"><button class="btn sm" data-qc="qk">×</button></div>
-      <div class="body" id="kBody"></div>
+      <div class="body"><div class="row" id="kBtns"><button class="btn" id="kPri" style="background:#0369a1;color:#fff">優先順番</button><button class="btn" id="kEx" style="background:#dc2626;color:#fff">突発</button></div>
+        <div id="d1pick"></div><div class="sum"><span class="s" id="d1sum"></span></div><div id="d1rows"></div>
+        <button class="btn sm" id="d1add">＋ 品番を追加</button>
+        <div class="actions"><button class="btn ok" id="d1ok" disabled>送信（検査用段取りへ）</button></div>
+        <div id="d1sent"></div></div>
     </section>
     <section class="pane" id="paneKake">
       <div class="panehead ph-kake" id="phKake" style="display:none">掛け作業場</div>
@@ -321,7 +333,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12i';
+const VER='2026-11-12j';
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
 /* 配布用：ここにURLと合言葉が入っていると、ファイルを開くだけで本番（在庫カウントと同じ配り方）。
@@ -469,7 +481,7 @@ async function poll(){
   }catch(e){setNet(false)}
 }
 async function fetchMaster(){
-  try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());return true}}catch(e){}
+  try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());d1Built=false;return true}}catch(e){}
   return false;
 }
 let andonLog=[];
@@ -558,17 +570,87 @@ function pickQrless(){
   });
 }
 
-/* ====== 段取り①+掛け：検査と同じ「一覧＋登録画面」 ======
-   一覧＝リミット表の品番（リミットの早い順）。品番をタップ → 開始・終了の時間、処理した箱数、登録する。登録するたびに、その箱数が検査用段取りへ送られる（1回の登録＝検査用段取りに1行）。
-   掛けの開始・終了は kb に [[開始,終了]] で持つ（実績の掛け時間・正味時間の計算に使う）。リミット表にない品番は「掛けのみ入力（突発）」 */
+/* ====== 段取り①：生産する品番をハンド入力（品番・背番・箱数） ====== */
+let plan=load('plan3',[{hin:'',box:''}]),d1Built=false,sentOpen=false;
 const nh=x=>String(x??'').normalize('NFKC').trim().toUpperCase();
+function savePlan(){save('plan3',plan)}
 /* 検索：品番・背番の一部で絞り込む（全角半角・大小文字はそろえて比べる） */
 const qv=id=>nh(($('#'+id)||{}).value||'');
 const hitQ=(j,q)=>!q||nh(j.hin).includes(q)||nh(j.sei||'').includes(q);
 /* 客先名はスペースや（ ）の前で改行して、1〜2文字だけ次の行に送られないようにする */
-const cuLabel=c=>String(c).trim().replace(/（/g,' （').split(/[\s　]+/).filter(Boolean).map(x=>`<span class="ln">${esc(x)}</span>`).join('');
+const cuLabel=c=>String(c).trim().replace(/（/g,' （').split(/[\s\u3000]+/).filter(Boolean).map(x=>`<span class="ln">${esc(x)}</span>`).join('');
 let pickCust=null;
-function renderPickInto(el,onPick){   /* 品番マスタから 客先→品番 を選ぶ */
+function renderPick(){
+  const el=$('#d1pick');if(!el)return;
+  if(!master.length){el.innerHTML='';return}
+  const custs=[...new Set(master.map(m=>m.cust))];
+  if(pickCust&&!custs.includes(pickCust))pickCust=null;
+  el.innerHTML=!pickCust
+   ?`<div class="mp"><div class="ttl"><span>① 客先を選ぶ</span></div><div class="gr cu">${custs.map(c=>`<button data-cu="${esc(c)}">${cuLabel(c)}<small style="color:#ddd6fe">${master.filter(m=>m.cust===c).length}品番</small></button>`).join('')}</div></div>`
+   :`<div class="mp"><div class="ttl"><span>② ${esc(pickCust)}：名称を選ぶ</span><button class="btn sm back" data-cu="">← 客先にもどる</button></div><div class="gr">${master.filter(m=>m.cust===pickCust).map(m=>m.kind==='row'?`<button data-pk="${esc(m.hin)}">${esc(m.hin)}${m.pn?`<small>${esc(m.pn)}</small>`:''}</button>`:`<button data-pk="${esc(m.hin||m.name)}">${esc(m.name||m.hin)}<small>${esc(m.sub||(m.name?m.hin:''))}</small></button>`).join('')}</div></div>`;
+}
+function pickItem(h){
+  let i=plan.findIndex(p=>nh(p.hin)===nh(h));
+  if(i<0){const e=plan.findIndex(p=>!nh(p.hin));if(e>=0){plan[e].hin=h;i=e}else{plan.push({hin:h,box:''});i=plan.length-1}if(!plan[i].t0)plan[i].t0=Date.now()}
+  savePlan();buildDan1();
+  const r=$('#d1rows').querySelector(`.hr[data-i="${i}"] .f-box`);if(r){r.focus();r.select&&r.select()}
+}
+function buildDan1(focusLast){
+  renderPick();
+  d1Built=true;
+  $('#d1rows').innerHTML=plan.map((p,i)=>`<div class="hr" data-i="${i}"><button class="x" data-del="${i}" title="この行を消す">×</button>
+    <label class="w">品番・背番<input class="f-hin" value="${esc(p.hin)}" autocomplete="off" autocapitalize="characters"></label>
+    <label class="w">箱数（かんばん枚数）<input class="f-box" type="number" min="1" step="1" inputmode="numeric" value="${esc(p.box)}"></label><div class="rc" style="grid-column:1/3"></div></div>`).join('');
+  updDan1();
+  if(focusLast){const l=$('#d1rows').querySelector('.hr:last-child .f-hin');if(l)l.focus()}
+}
+function d1Valid(){return plan.filter(p=>nh(p.hin))}
+function updDan1(){
+  if(!d1Built)return;
+  const v=d1Valid(),tb=fn(v.reduce((a,p)=>a+(+p.box||0),0));
+  $('#d1rows').querySelectorAll('.hr').forEach(r=>{const pl=plan[+r.dataset.i],rc=r.querySelector('.rc');if(rc)rc.innerHTML=pl&&nh(pl.hin)?stdChips(pl.hin,'k'):''});   /* ハンガー種類・1個あたりの基準時間 */
+  $('#d1sum').innerHTML=`入力済み <b>${v.length}</b> 品番　箱数合計 <b>${tb}</b>`;$('#d1ok').disabled=!v.length;$('#d1ok').textContent='送信（'+SN(2)+'へ）';
+  const mine=Object.values(jobs).filter(j=>j.tab===S.name&&j.t1&&j.st!=='cancel'&&ymd(j.t1)===ymd(Date.now())).sort((a,b)=>b.t1-a.t1);
+  /* さっき送ったもの：ふだんはボタンだけ。押すと今日送ったものを新しい順に全部出す（もう一度押すと閉じる） */
+  $('#d1sent').innerHTML=mine.length?`<button class="btn sm" id="d1sentBtn" style="width:100%">さっき送ったもの（今日 ${mine.length}件）${sentOpen?'▲ とじる':'▼ 見る'}</button>${sentOpen?`<div class="sent" style="margin-top:.4rem">${mine.map(j=>`<div><span>${esc(j.hin)}　${j.n}箱</span><small>${hm(j.t1)}</small></div>`).join('')}</div>`:''}`:'';
+}
+function renderDan1(){if(!showDan1()||view!=='main')return;if(!d1Built)buildDan1();else updDan1()}
+function addRow(){plan.push({hin:'',box:''});savePlan();buildDan1(true)}
+function confirmPlan(){
+  const v=d1Valid();if(!v.length)return;
+  const seen={};for(const p of v){const k=nh(p.hin);if(seen[k]){alert('品番「'+p.hin+'」が2回入っています');return}seen[k]=1}
+  if(v.length===1){   /* 1品番だけなら確認なしですぐ送信（まちがえたら上の「元に戻す」） */
+    const p=v[0];if(!(+p.box>=1)||!Number.isInteger(+p.box)){alert('「'+p.hin+'」の箱数（かんばん枚数）を入力してください');return}
+    promotePlan([p]);return}
+  openModal(`<h3>${esc(SN(2))}へ送る品番を選んでください</h3>
+   <label class="ckr all"><input type="checkbox" id="ckAll" checked>すべて選ぶ／はずす</label>
+   ${v.map(p=>`<label class="ckr"><input type="checkbox" class="ckp" data-i="${plan.indexOf(p)}" checked>${esc(p.hin)}　${p.box===''?'<span style="color:var(--bad)">箱数なし</span>':(+p.box)+'箱'}</label>`).join('')}
+   <div class="foot"><button class="btn ghost" data-close>もどる</button><button class="btn ok" id="okP"></button></div>`,()=>{
+    const cks=()=>[...document.querySelectorAll('.ckp')];
+    const upd=()=>{const n=cks().filter(c=>c.checked).length;$('#okP').textContent='選んだ '+n+' 品番を送信';$('#okP').disabled=!n;$('#ckAll').checked=n===cks().length};
+    $('#ckAll').onchange=e=>{cks().forEach(c=>c.checked=e.target.checked);upd()};
+    cks().forEach(c=>c.onchange=upd);upd();
+    $('#okP').onclick=()=>{
+      const ch=cks().filter(c=>c.checked).map(c=>plan[+c.dataset.i]);
+      const bad=ch.find(p=>!(+p.box>=1)||!Number.isInteger(+p.box));
+      if(bad){alert('「'+bad.hin+'」の箱数（かんばん枚数）を入力してください');return}
+      closeModal();promotePlan(ch)}});
+}
+function promotePlan(v){
+  const now=Date.now(),back=JSON.parse(JSON.stringify(plan)),ids=[];
+  v.forEach((p,i)=>{const n=+p.box,id='H-'+S.name+'-'+now+'-'+i+'-'+Math.random().toString(36).slice(2,5);ids.push(id);
+    upsert({id,tab:S.name,hin:p.hin.normalize('NFKC').trim(),sei:'',maker:'',qty:n,n,nq:n,ins:0,t0:p.t0||now,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[]})});
+  plan=plan.filter(p=>!v.includes(p)&&(nh(p.hin)||p.box!==''));if(!plan.length)plan=[{hin:'',box:''}];savePlan();buildDan1();
+  const planAfter=JSON.parse(JSON.stringify(plan));
+  histNext={undo:()=>{plan=JSON.parse(JSON.stringify(back));savePlan();buildDan1()},redo:()=>{plan=JSON.parse(JSON.stringify(planAfter));savePlan();buildDan1()}};   /* 元に戻す／やり直すで、入力欄も同じに */
+  toast(v.length+'品番を'+SN(2)+'へ送りました');
+}
+
+/* ====== 優先順番・突発・登録画面 ======
+   「優先順番」＝リミット表の品番の一覧（リミットの早い順。のこり数量は出さない）→ 品番をタップ → 登録画面（掛け開始・終了の時間ホイールと処理した箱数）。登録するたびに、その箱数が検査用段取りへ送られる。
+   「突発」＝計画にない掛け。客先→品番（または品番・背番を打つ）・箱数・開始・終了を入れて送ると、maker に「突発」が入り、検査用段取り・検査・実績に赤い「突発」の印が出る（リミット表の済には数えない）。
+   掛けの開始・終了は kb に [[開始,終了]] で持つ（実績の掛け時間・正味時間の計算に使う）。入力欄から送ったものは 入力開始〜送信 */
+function renderPickInto(el,onPick){   /* 品番マスタから 客先→品番 を選ぶ（突発の画面用） */
   if(!el)return;if(!master.length){el.innerHTML='';return}
   const custs=[...new Set(master.map(m=>m.cust))];if(pickCust&&!custs.includes(pickCust))pickCust=null;
   el.innerHTML=!pickCust
@@ -576,47 +658,61 @@ function renderPickInto(el,onPick){   /* 品番マスタから 客先→品番 �
    :`<div class="mp"><div class="ttl"><span>② ${esc(pickCust)}：名称を選ぶ</span><button class="btn sm back" data-cu="">← 客先にもどる</button></div><div class="gr">${master.filter(m=>m.cust===pickCust).map(m=>m.kind==='row'?`<button data-pk="${esc(m.hin)}">${esc(m.hin)}${m.pn?`<small>${esc(m.pn)}</small>`:''}</button>`:`<button data-pk="${esc(m.hin||m.name)}">${esc(m.name||m.hin)}<small>${esc(m.sub||(m.name?m.hin:''))}</small></button>`).join('')}</div></div>`;
   el.onclick=e=>{const c=e.target.closest('[data-cu]'),k=e.target.closest('[data-pk]');if(c){pickCust=c.dataset.cu||null;renderPickInto(el,onPick)}else if(k)onPick(k.dataset.pk)};
 }
-const kakeBoxesToday=part=>Object.values(jobs).filter(j=>!j.only&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&j.t1&&ymd(j.t1)===ymd(Date.now())&&nh(j.hin)===nh(part)).reduce((a,j)=>a+boxesOf(j),0);
+const isEx=j=>!!j&&j.maker==='突発'&&stg(j)!==9;
 /* 掛けを登録：検査用段取りへ1行送る */
-function kakeRegister({part,n,start,end}){
+function kakeRegister({part,n,start,end,ex}){
   const now=Date.now(),id='H-'+S.name+'-'+now+'-'+Math.random().toString(36).slice(2,5);
-  upsert({id,tab:S.name,hin:String(part).normalize('NFKC').trim(),sei:'',maker:'',qty:n,n,nq:n,ins:0,t0:start,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[[start,end]]});
-  toast(String(part).trim()+' '+n+'箱を'+SN(2)+'へ送りました');
+  upsert({id,tab:S.name,hin:String(part).normalize('NFKC').trim(),sei:'',maker:ex?'突発':'',qty:n,n,nq:n,ins:0,t0:start,t1:now,eta:now+S.etaMin*60000,stage:2,st:'wait',tp:now,kb:[[start,end]]});
+  toast(String(part).trim()+' '+n+'箱を'+SN(2)+'へ送りました'+(ex?'（突発）':''));
 }
-const kakeRange=j=>{const k=j.kb&&j.kb[0];return k&&k.length===2&&k[0]&&k[1]?[k[0],k[1]]:[j.t0,j.t1]};   /* 掛けの開始・終了（古い記録は 入力開始〜送信） */
-function renderDan1(){
-  if(!showDan1()||view!=='main')return;
-  const b=$('#kBody');if(!b)return;
-  const only=`<button class="btn sm" id="kOnlyBtn" style="margin-bottom:.5rem">＋ 掛けのみ入力（突発）</button>`;
-  if(!limit){b.innerHTML=only+'<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
-  const qk=qv('qk'),L=limitState().filter(x=>!x.nop).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i),todo=L.filter(x=>!x.isDone),dn=L.filter(x=>x.isDone);
-  const T=todo.filter(x=>hitQ({hin:x.it.part},qk)),D=dn.filter(x=>hitQ({hin:x.it.part},qk)),day0=new Date();day0.setHours(0,0,0,0);
-  const row=x=>{const it=x.it,ar=limit.areas[x.ai].area;
-    return `<div class="job jr kk${x.isDone?' kd':''}" data-kk="${esc(x.key)}"><span class="no">${x.isDone?'✓':todo.indexOf(x)+1}</span><span class="h"><span class="ar">${esc(ar)}</span>${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}</span><span class="bxb">${x.need>0?(x.isDone?fn(x.done):fn(x.rem))+'/'+x.need+'箱':fn(x.done)+'箱'}</span><span class="tm">${x.done?'済 '+fn(x.done):'―'}</span><span class="t">${hm0(limit.times[x.ti])}</span>${x.isDone?'<span class="rem">済</span>':`<span class="rem" data-eta="${day0.getTime()+limit.times[x.ti]*60000}"></span>`}<span class="go">›</span></div>`};
-  const late=todo.filter(x=>x.late).length;
-  b.innerHTML=`${only}<div class="sum"><span class="s">済み <b>${dn.length}</b> / ${L.length} 件</span>${late?`<span class="s" style="border-color:var(--bad);color:var(--bad)">遅れ <b style="color:var(--bad)">${late}</b> 件</span>`:''}</div>
-   <h2>これから掛ける（${qk?T.length+'件／全'+todo.length:T.length}件）<span class="hint">品番をタップして登録（リミットの早い順）。登録すると${esc(SN(2))}へ送られます</span></h2>
-   ${T.length?`<div class="jlist"><div class="jr hd"><span>No</span><span>品番・背番</span><span style="text-align:right">のこり／全体</span><span class="tm">掛け済み</span><span>リミット</span><span>のこり時間</span><span></span></div>${T.map(row).join('')}</div>`:(qk&&todo.length?'<div class="empty">「'+esc(qk)+'」に当てはまる品番はありません</div>':'<div class="empty">掛けるものは、ありません</div>')}
-   ${D.length?`<h2>掛け済み（${D.length}件）</h2><div class="jlist">${D.map(row).join('')}</div>`:''}`;
+const kakeRange=j=>{const k=j.kb&&j.kb[0];return k&&k.length===2&&k[0]&&k[1]?[k[0],k[1]]:[j.t0,j.t1]};   /* 掛けの開始・終了（入力欄から送ったものは 入力開始〜送信） */
+/* リミット表のカードをタップ → 掛けの画面に切りかえて、その品番を入力欄に入れる */
+function goKake(key){
+  const u=limit&&limitModel().units[key];if(!u)return;
+  if(!showDan1()){toast('この端末には、'+SN(0)+'の画面がありません');return}
+  view='main';layout();renderHeader();renderAll();pickItem(u.part);
+  const pn=$('#paneDan1');if(pn&&pn.scrollIntoView)pn.scrollIntoView({block:'start'});
+}
+/* 優先順番：リミット表の品番の一覧（のこり数量は出さない）。済は下に分けて残す */
+function openKakePri(){
+  openModal(`<h3>優先順番<span class="hint" style="display:block;font-weight:600">リミットの早い順。品番をタップして登録</span></h3>
+    <div class="sbar2"><input id="pqIn" type="search" placeholder="品番・背番で検索" autocomplete="off" autocapitalize="characters"><button class="btn sm" id="pqClr">×</button></div>
+    <div id="pqList"></div><div class="foot"><button class="btn ghost" data-close>とじる</button></div>`,()=>{
+    $('#pqIn').oninput=drawKakePri;$('#pqClr').onclick=()=>{$('#pqIn').value='';drawKakePri();$('#pqIn').focus()};
+    $('#pqList').onclick=e=>{const r=e.target.closest('[data-kk]');if(r)openKake(r.dataset.kk)};
+    drawKakePri();
+  });
+}
+function drawKakePri(){
+  const el=$('#pqList');if(!el)return;
+  if(!limit){el.innerHTML='<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
+  const q=nh($('#pqIn').value),L=limitState().filter(x=>!x.nop&&(!q||nh(x.it.part).includes(q))).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i),todo=L.filter(x=>!x.isDone),dn=L.filter(x=>x.isDone),day0=new Date();day0.setHours(0,0,0,0);
+  const row=(x,n)=>`<div class="prow${x.isDone?' dn':''}" data-kk="${esc(x.key)}"><span class="no">${x.isDone?'✓':n}</span><span class="h"><span class="ar">${esc(limit.areas[x.ai].area)}</span>${esc(x.it.part)}${x.it.piece?`<span class="pc">${x.it.piece}</span>`:''}${x.it.hand?'<span class="hb">手入力</span>':''}</span><span class="t">${hm0(limit.times[x.ti])}</span>${x.isDone?'<span class="rem">済</span>':`<span class="rem" data-eta="${day0.getTime()+limit.times[x.ti]*60000}"></span>`}<span class="go">›</span></div>`;
+  el.innerHTML=`<div class="prh"><span>No</span><span>品番・背番</span><span>リミット</span><span>のこり時間</span><span></span></div>${todo.length?todo.map((x,i)=>row(x,i+1)).join(''):'<div class="empty">掛けるものは、ありません</div>'}
+    ${dn.length?`<h2 style="margin-top:.8rem">掛け済み（${dn.length}件）</h2>${dn.map(x=>row(x)).join('')}`:''}`;
   tick();
 }
-let kd=null;   /* 掛けの登録画面の状態 {key,part,bx,t} */
-function openKake(key,part){const nd=new Date();kd={key:key||null,part:part||null,bx:null,t:{sH:nd.getHours(),sM:nd.getMinutes(),eH:nd.getHours(),eM:nd.getMinutes()}};openModal('<div id="kakeBox"></div>',drawKake)}
+let kd=null;   /* 登録画面の状態 {key,part,bx,t,ex} */
+function openKake(key,part,ex){const nd=new Date();kd={key:key||null,part:part||'',ex:!!ex,bx:'',t:{sH:nd.getHours(),sM:nd.getMinutes(),eH:nd.getHours(),eM:nd.getMinutes()}};openModal('<div id="kakeBox"></div>',drawKake)}
 function drawKake(){
   const box=$('#kakeBox');if(!box||!kd)return;
   const x=kd.key&&limit?limitState().find(y=>y.key===kd.key):null;if(kd.key&&!x){closeModal();return}
-  const part=x?x.it.part:kd.part,done=x?x.done:kakeBoxesToday(part),need=x?x.need:0,rem=x?x.rem:0;
-  if(kd.bx==null)kd.bx=x&&rem>0?rem:1;
-  const sub=x?`${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}　${need>0?'全体 '+need+'箱':''}`:'掛けのみ（突発）';
-  box.innerHTML=`<h3>${esc(x?llabel(x.it):part)}　<span style="font-size:1rem;color:var(--mut)">${sub}</span>${stdChips(part,'k',x&&x.it.hanger)}</h3>
-    <div class="st3">${x&&need>0?`<div class="c on"><span>のこり</span><b>${fn(rem)}</b><small>箱</small></div><div class="c"><span>掛け済み</span><b>${fn(done)}</b><small>箱</small></div><div class="c"><span>全体</span><b>${fn(need)}</b><small>箱</small></div>`:`<div class="c on" style="grid-column:1/-1"><span>今日の掛け済み</span><b>${fn(done)}</b><small>箱</small></div>`}</div>
-    <div class="reg">
+  const part=x?x.it.part:kd.part,btn=kd.ex?'送信（突発）':'登録する';
+  const head=kd.ex?`<h3 style="color:var(--bad)">突発の入力</h3><div class="hint">計画にない掛け。客先ボタンから選ぶか、品番・背番を入れてください</div><div id="kpick"></div>
+      <div class="hr" style="margin-top:.5rem"><label class="w">品番・背番<input id="kHin" autocomplete="off" autocapitalize="characters" value="${esc(kd.part)}"></label><div class="rc" id="kchips" style="grid-column:1/3">${kd.part?stdChips(kd.part,'k'):''}</div></div>`
+    :`<h3>${esc(llabel(x.it))}　<span style="font-size:1rem;color:var(--mut)">${esc(limit.areas[x.ai].area)}　リミット ${hm0(limit.times[x.ti])}</span>${stdChips(part,'k',x.it.hanger)}</h3>`;
+  box.innerHTML=`${head}
+    <div class="reg" style="margin-top:.6rem">
       <div class="tp"><span>掛け開始</span><div class="wh" data-k="sH"></div><b>:</b><div class="wh" data-k="sM"></div><button class="btn ghost" data-now="s">今</button></div>
       <div class="tp"><span>掛け終了</span><div class="wh" data-k="eH"></div><b>:</b><div class="wh" data-k="eM"></div><button class="btn ghost" data-now="e">今</button></div>
-      <div class="rb"><span>処理した箱数</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="kBx" type="number" min="1" step="1" inputmode="numeric" value="${kd.bx}"><button class="btn ghost" data-bx="1">+1</button></div></div>
-      <button class="btn insp" id="kReg">登録する</button>
+      <div class="rb"><span>作業した箱数（かんばん枚数）</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="kBx" type="number" min="1" step="1" inputmode="numeric" value="${esc(kd.bx)}"><button class="btn ghost" data-bx="1">+1</button></div></div>
+      <button class="btn ${kd.ex?'red':'insp'}" id="kReg">${btn}</button>
     </div>
-    <div class="foot"><button class="btn ghost" data-close>とじる</button></div>`;
+    <div class="foot"><button class="btn ghost" data-close>${kd.ex?'やめる':'もどる'}</button></div>`;
+  if(kd.ex){
+    renderPickInto($('#kpick'),h=>{kd.part=h;$('#kHin').value=h;$('#kchips').innerHTML=stdChips(h,'k');$('#kBx').focus()});
+    $('#kHin').oninput=e=>{kd.part=e.target.value;$('#kchips').innerHTML=nh(kd.part)?stdChips(kd.part,'k'):''};
+  }
   box.querySelectorAll('.wh').forEach(w=>{const k=w.dataset.k,max=k.endsWith('H')?23:59;
     w.innerHTML='<div class="wi"></div>'+Array.from({length:max+1},(_,v)=>`<div class="wi">${pad(v)}</div>`).join('')+'<div class="wi"></div>';
     const mark=()=>w.querySelectorAll('.wi').forEach((e,i)=>e.classList.toggle('on',i-1===kd.t[k]));
@@ -627,29 +723,19 @@ function drawKake(){
   });
   box.querySelectorAll('[data-now]').forEach(b=>b.onclick=()=>{const d=new Date(),p=b.dataset.now;kd.t[p+'H']=d.getHours();kd.t[p+'M']=d.getMinutes();drawKake()});
   box.querySelectorAll('[data-bx]').forEach(b=>b.onclick=()=>{kd.bx=Math.max(1,(+$('#kBx').value||0)+(+b.dataset.bx));$('#kBx').value=kd.bx});
-  $('#kBx').oninput=e=>kd.bx=+e.target.value;
+  $('#kBx').oninput=e=>kd.bx=e.target.value;
   $('#kReg').onclick=()=>{
-    const bx=+$('#kBx').value,d0=new Date();d0.setSeconds(0,0);
+    const bx=+$('#kBx').value,d0=new Date(),pt=kd.ex?$('#kHin').value.normalize('NFKC').trim():part;
+    d0.setSeconds(0,0);
     const st=new Date(d0).setHours(kd.t.sH,kd.t.sM),en=new Date(d0).setHours(kd.t.eH,kd.t.eM);
+    if(!pt){alert('品番・背番を入れてください');return}
     if(isNaN(st)||isNaN(en)){alert('時間が読み取れませんでした。もう一度「今」を押すか、ホイールで時間を合わせてください');return}
     if(en<st){alert('掛け終了の時間が、掛け開始より前になっています');return}
-    if($('#kBx').value===''||!Number.isInteger(bx)||bx<1){alert('処理した箱数を1以上の整数で入れてください');return}
-    if(x&&need>0&&bx>rem&&!confirm('のこり '+fn(rem)+'箱より多い '+bx+'箱です。このまま登録しますか？'))return;
+    if($('#kBx').value===''||!Number.isInteger(bx)||bx<1){alert('作業した箱数を1以上の整数で入れてください');return}
     if(en===st&&!confirm('掛けた時間が0分です（開始と終了が同じ）。このまま登録しますか？\n0分のものは、能率の計算に入りません。'))return;
-    kakeRegister({part,n:bx,start:st,end:en});
-    kd.t.sH=kd.t.eH;kd.t.sM=kd.t.eM;kd.bx=null;beep(1500,.08,1);
-    if(x&&need>0&&rem-bx<=0){closeModal();return}   /* のこり0 → 画面を閉じる */
-    drawKake();
+    const ex=kd.ex;kakeRegister({part:pt,n:bx,start:st,end:en,ex});beep(1500,.08,1);
+    closeModal();if(!ex)setTimeout(openKakePri,60);   /* 優先順番の一覧にもどる */
   };
-}
-function openKakeOnly(){
-  openModal(`<h3>掛けのみ入力（突発）</h3><div class="hint">リミット表にない品番を掛けるとき</div><div id="kpick"></div>
-    <div class="hr" style="margin-top:.6rem"><label class="w">品番・背番<input id="kHin" autocomplete="off" autocapitalize="characters"></label></div>
-    <div class="foot"><button class="btn ghost" data-close>やめる</button><button class="btn ok" id="kGo">登録画面へ</button></div>`,()=>{
-    renderPickInto($('#kpick'),h=>{$('#kHin').value=h;$('#kGo').focus()});
-    $('#kHin').focus();$('#kHin').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#kGo').click()}};
-    $('#kGo').onclick=()=>{const h=$('#kHin').value.normalize('NFKC').trim();if(!h){alert('品番・背番を入れてください');return}openKake(null,h)};
-  });
 }
 
 /* ====== 検査用段取り：掛け完了 → 準備OK → 検査へ ====== */
@@ -657,7 +743,7 @@ function renderDan2(){
   if(!showDan2()||view!=='main')return;
   const ALL=Object.values(jobs).filter(j=>stg(j)===2&&j.st==='wait').sort((a,b)=>a.t1-b.t1),q2=qv('q2'),L=ALL.filter(j=>hitQ(j,q2));
   $('#dan2Body').innerHTML=`<h2>届いた順（${q2?L.length+'件／全'+ALL.length:L.length}件）<span class="hint">準備OKで${esc(SN(3))}へ。箱数を押すと変更できます</span></h2>`+(L.length?`<div class="jlist"><div class="jr d2 hd"><span>No</span><span>品番・背番</span><span style="text-align:right">箱数</span><span class="tm">送信</span><span>到着</span><span></span></div>`+L.map(j=>`<div class="jr d2" data-id="${esc(j.id)}" title="${esc(j.tab)}">
-    <span class="no">${ALL.indexOf(j)+1}</span><span class="h">${isBack(j)?'<span class="tg bk">戻り</span>':''}${esc(j.hin)}</span><button class="bxb" data-ed="dan2">${fn(j.n)}箱${r2(j.n)!==r2(j.qty)&&j.qty!=null?` <small>/${fn(j.qty)}</small>`:''}</button><span class="tm">${hm(j.t1)}</span><span class="t">${hm(j.eta)}</span>
+    <span class="no">${ALL.indexOf(j)+1}</span><span class="h">${isBack(j)?'<span class="tg bk">戻り</span>':''}${isEx(j)?'<span class="tg ex">突発</span>':''}${esc(j.hin)}</span><button class="bxb" data-ed="dan2">${fn(j.n)}箱${r2(j.n)!==r2(j.qty)&&j.qty!=null?` <small>/${fn(j.qty)}</small>`:''}</button><span class="tm">${hm(j.t1)}</span><span class="t">${hm(j.eta)}</span>
     <span class="bt"><button class="btn ok" data-adv="1">準備OK</button></span></div>`).join('')+'</div>':(q2&&ALL.length?'<div class="empty">「'+esc(q2)+'」に当てはまる品番はありません</div>':'<div class="empty">いま届いているものはありません</div>'));
 }
 function advance(id){
@@ -876,7 +962,7 @@ function renderKensa(){
   const tot={};wait.forEach(j=>tot[j.hin]=r2((tot[j.hin]||0)+remN(j)));
   const sum=Object.keys(tot).map(h=>`<span class="s">${esc(h)} <b>${tot[h]}</b>箱</span>`).join('');
   const card=j=>`<div class="job jr" data-id="${esc(j.id)}" title="${esc(j.tab)}">
-    <span class="no">${WALL.indexOf(j)+1}</span><span class="h">${j.pz?'<span class="tg pz">中断中</span>':''}${j.only?'<span class="tg on1">検査のみ</span>':''}${esc(j.hin)}</span><span class="bxb">${fn(remN(j))}箱${r2(remN(j))!==r2(j.n)?` <small>/${fn(j.n)}</small>`:''}</span><span class="tm">${hm(j.t1)}</span><span class="t">${hm(j.eta)}</span>${j.only?'<span class="rem">―</span>':`<span class="rem" data-eta="${j.eta}"></span>`}<span class="go">›</span></div>`;
+    <span class="no">${WALL.indexOf(j)+1}</span><span class="h">${j.pz?'<span class="tg pz">中断中</span>':''}${j.only?'<span class="tg on1">検査のみ</span>':''}${isEx(j)?'<span class="tg ex">突発</span>':''}${esc(j.hin)}</span><span class="bxb">${fn(remN(j))}箱${r2(remN(j))!==r2(j.n)?` <small>/${fn(j.n)}</small>`:''}</span><span class="tm">${hm(j.t1)}</span><span class="t">${hm(j.eta)}</span>${j.only?'<span class="rem">―</span>':`<span class="rem" data-eta="${j.eta}"></span>`}<span class="go">›</span></div>`;
   $('#kensaBody').innerHTML=`
    <button class="btn sm" id="kOnly" style="margin-bottom:.5rem">＋ 検査のみ入力（突発）</button>
    ${sum?`<div class="sum">${sum}</div>`:''}
@@ -1013,7 +1099,7 @@ const boxesOf=j=>+(j.qty??j.n)||0;
 function limitState(){
   if(!limit)return[];
   const m=limitModel(),td=ymd(Date.now()),nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),q={};
-  Object.values(jobs).filter(j=>j.t1&&!j.only&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));
+  Object.values(jobs).filter(j=>j.t1&&!j.only&&!isEx(j)&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));   /* 突発は数えない */
   const L=[];m.order.forEach((cols,ai)=>cols.forEach((list,ti)=>list.forEach((k,i)=>L.push({ai,ti,i,key:k,it:m.units[k]}))));
   const by={};L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{(by[nh(x.it.part)]=by[nh(x.it.part)]||[]).push(x)});
   Object.keys(by).forEach(k=>{const us=by[k],js=q[k]||[],rest=js.map(boxesOf);let ji=0;
@@ -1040,7 +1126,7 @@ function renderLimit(){
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
    ${late.length?`<div class="lp" style="border-color:var(--bad)"><div class="t" style="color:var(--bad)">遅れ ${late.length} 件<span class="hint">　リミット時刻を過ぎて、まだ送信していない品番</span></div>
      <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(llabel(x.it))}</span>`).join('')}</div></div>`:''}
-   <div class="hint">品番をタップ → ${esc(SN(0))}の登録画面が開きます（掛けた箱数がのこり0になると「済」）。赤＝リミット時刻を過ぎて未完了</div>
+   <div class="hint">品番をタップ → ${esc(SN(0))}の入力欄にその品番が入ります（掛けた箱数がのこり0になると「済」）。赤＝リミット時刻を過ぎて未完了</div>
    <div class="row" style="align-items:center;gap:.5rem"><button class="btn sm" id="lPrev">前日の配置に戻す</button><button class="btn sm" id="lSavePrev">今の配置を保存</button><button class="btn sm" id="lReset">Excelの並びに戻す</button>${m.removed.length?`<button class="btn sm" id="lRem">外した品番（${m.removed.length}）</button>`:''}<span class="lzoom"><button class="btn sm" id="lzOut" aria-label="縮小">－</button><span id="lzLbl">100%</span><button class="btn sm" id="lzIn" aria-label="拡大">＋</button><button class="btn sm" id="lzFit">全体</button></span><button class="btn ok" id="lXlsx" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button></div>
    <div class="hint">${esc(lePrevLabel())}</div>
    <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力</div>
@@ -1236,7 +1322,7 @@ function exportLimitXlsx(){
   t.addEventListener('touchend',e=>{if(lpinch&&e.touches.length<2){lpinch=null;save('limitZoom',limitZoom)}});
   t.addEventListener('click',e=>{
     if(performance.now()-ljust<500)return;
-    const li=e.target.closest('.li[data-li]');if(li){openKake(li.dataset.li);return}
+    const li=e.target.closest('.li[data-li]');if(li){goKake(li.dataset.li);return}
     if(e.target.closest('#lReset')){if(confirm('並び順・外した品番・分割を、Excelから取り込んだときの元の状態に戻しますか？\n（手入力した品番は残ります）'))leReset();return}
     if(e.target.closest('#lRem')){openLimitRemoved();return}
     if(e.target.closest('#lPrev')){openLimitPrev();return}
@@ -1264,7 +1350,7 @@ function jRefreshSel(){   /* 選んだ状態を、表を作り直さずに反映
 }
 function jDraw(){
   if(!jsh)return;const sh=jsh,R=sh.rows.slice(3),H=sh.rows[2],G=[1,8,13,20],DI=[7,19];
-  const td=(v,i)=>`<td class="${typeof v==='number'?'n':''}${G.includes(i)?' gl tb':''}${DI.includes(i)&&typeof v==='number'?(v>0?' dpl':v<0?' dmi':''):''}">${esc(DI.includes(i)&&typeof v==='number'&&v>0?'+'+v:v)}</td>`;
+  const td=(v,i)=>`<td class="${typeof v==='number'?'n':''}${typeof v==='string'&&v.includes('（突発）')?' exm':''}${G.includes(i)?' gl tb':''}${DI.includes(i)&&typeof v==='number'?(v>0?' dpl':v<0?' dmi':''):''}">${esc(DI.includes(i)&&typeof v==='number'&&v>0?'+'+v:v)}</td>`;
   const dc=dayCalc(jrows),fm=o=>o.a>0?`<b>${effOf(o)}%</b>（正味 ${fmtn(o.w)}分 ÷ 実績 ${fmtn(o.a)}分）`:'―';
   const sumH=`<div class="lp" style="margin-top:.6rem"><div class="t" style="font-size:1.05rem">${esc(jdate)} の能率　${esc(SN(0))} ${fm(dc.k)}　${esc(SN(3))} ${fm(dc.i)}　全体 ${fm(dc.t)}</div></div>`;
   /* Excelの「実績」シートと同じ内容を画面に表示（タブレットごと・工程ごとに横並び） */
@@ -1425,9 +1511,9 @@ function jissekiSheet(date,rows,andons){
     no++;ids.push((a||j).id);
     if(a){out.push([no,...E7,...E5,...E7,a.tab,'','','呼び出し：'+a.hin+(a.td?'（対応 '+hm(a.td)+' '+(a.sei||'')+'）':'（未対応）')]);return}
     const n1=+(j.qty??j.n),n2=+(j.n2??j.n),n3=+j.ins||0,c=jobCalc(j),kr=kakeRange(j);
-    const b1=j.only?E7:[j.tab,j.hin,n1,rng(kr[0],kr[1]),V(c.w1),V(c.a1),Df(c.a1,c.w1)];
-    const b2=j.ta2?[j.tab2||'',j.hin,n2,rng(j.t1,j.ta2),perBox(j.ta2-j.t1,n2)]:E5;
-    const b3=(j.ses&&j.ses.length)?[j.tab3||'',j.hin+(j.only?'（検査のみ）':''),n3,rng(j.ses[0][0],j.ses[j.ses.length-1][1]),V(c.w3),V(c.a3),Df(c.a3,c.w3)]:(j.only?[j.tab0||'',j.hin+'（検査のみ）','','','','','']:E7);
+    const exT=isEx(j)?'（突発）':'',b1=j.only?E7:[j.tab,j.hin+exT,n1,rng(kr[0],kr[1]),V(c.w1),V(c.a1),Df(c.a1,c.w1)];
+    const b2=j.ta2?[j.tab2||'',j.hin+exT,n2,rng(j.t1,j.ta2),perBox(j.ta2-j.t1,n2)]:E5;
+    const b3=(j.ses&&j.ses.length)?[j.tab3||'',j.hin+exT+(j.only?'（検査のみ）':''),n3,rng(j.ses[0][0],j.ses[j.ses.length-1][1]),V(c.w3),V(c.a3),Df(c.a3,c.w3)]:(j.only?[j.tab0||'',j.hin+'（検査のみ）','','','','','']:E7);
     const ev=[];(j.adj||[]).forEach(x=>ev.push([x[0],x[4]||j.tab3||'',x[2]+' '+(x[1]>0?'+':'')+x[1]+(x[3]?'（'+x[3]+'）':'')]));
     (j.paus||[]).forEach(p=>ev.push([p[0],p[1],'一時中断']));
     if(j.only)ev.push([j.tp,j.tab0||'','検査のみ入力 '+n1+'箱']);
@@ -1442,9 +1528,9 @@ const esc0=x=>x;
 function exportExcel(date,rows){
   if(!rows.length&&!andonLog.length){toast('この日の実績はありません');return}
   const V=v=>v==null?'':r1x(v),Df=(a,w)=>a!=null&&w!=null?r1x(a-w):'';
-  const head=['日付','タブレット名','品番','協豊背番号','箱数（かんばん枚数）','うちQRなし','開始（掛け開始）','完了（送信）','作業時間（分）','到着予定','準備OK','検査完了','状態','メーカー','送信時の箱数','検査済み箱数','不良','前工程の数が違う','ハンド入力（増減）','掛け箱数','掛け正味時間（分）','掛け実績時間（分）','掛け差異（分）','検査箱数','検査正味時間（分）','検査実績時間（分）','検査差異（分）','修正の記録'];
+  const head=['日付','タブレット名','品番','協豊背番号','箱数（かんばん枚数）','うちQRなし','開始（掛け開始）','完了（送信）','作業時間（分）','到着予定','準備OK','検査完了','状態','突発','メーカー','送信時の箱数','検査済み箱数','不良','前工程の数が違う','ハンド入力（増減）','掛け箱数','掛け正味時間（分）','掛け実績時間（分）','掛け差異（分）','検査箱数','検査正味時間（分）','検査実績時間（分）','検査差異（分）','修正の記録'];
   const detail=[head].concat(rows.map(j=>{const c=jobCalc(j),kr=kakeRange(j);
-    return [ymd(j.t1),j.tab,j.hin,j.sei||'',j.n,j.nq||0,hm(kr[0]),hm(kr[1]),Math.round((kr[1]-kr[0])/6000)/10,hm(j.eta),j.tr?hm(j.tr):'',j.td?hm(j.td):'',stLabel(j),j.maker||'',j.qty==null?'':j.qty,+j.ins||0,...FIXR.map(r=>(j.adj||[]).filter(a=>a[2]===r).reduce((t,a)=>t+a[1],0)),
+    return [ymd(j.t1),j.tab,j.hin,j.sei||'',j.n,j.nq||0,hm(kr[0]),hm(kr[1]),Math.round((kr[1]-kr[0])/6000)/10,hm(j.eta),j.tr?hm(j.tr):'',j.td?hm(j.td):'',stLabel(j),isEx(j)?'突発':'',isEx(j)?'':j.maker||'',j.qty==null?'':j.qty,+j.ins||0,...FIXR.map(r=>(j.adj||[]).filter(a=>a[2]===r).reduce((t,a)=>t+a[1],0)),
       c.n1,V(c.w1),V(c.a1),Df(c.a1,c.w1),c.n3,V(c.w3),V(c.a3),Df(c.a3,c.w3),
       (j.adj||[]).map(a=>hm(a[0])+' '+a[2]+' '+(a[1]>0?'+':'')+a[1]+(a[3]?'（'+a[3]+'）':'')).join(' / ')]}));
   /* 品番単位の合計：正味時間と実績時間（正味と実績の両方がある分だけ）・差異・能率 */
@@ -1456,7 +1542,7 @@ function exportExcel(date,rows){
   const sumSheet={name:'品番別合計',rows:[['品番','掛け箱数','掛け正味時間（分）','掛け実績時間（分）','掛け差異（分）','掛け能率（％）','検査箱数','検査正味時間（分）','検査実績時間（分）','検査差異（分）','検査能率（％）','合計正味時間（分）','合計実績時間（分）','合計差異（分）','合計能率（％）']].concat(rowsP,[line('合計',tot)]),widths:[16,10,14,14,12,12,10,14,14,12,12,14,14,12,12]};
   const blob=buildXlsx([
    jissekiSheet(date,rows,andonLog),
-   {name:'実績明細',rows:detail,widths:[12,14,14,14,12,10,16,12,14,10,10,10,14,14,14,14,8,16,14,10,14,14,12,10,14,14,12,30]},
+   {name:'実績明細',rows:detail,widths:[12,14,14,14,12,10,16,12,14,10,10,10,14,8,14,14,14,8,16,14,10,14,14,12,10,14,14,12,30]},
    sumSheet,
    {name:'呼び出し記録',rows:[['日付','呼び出し時刻','工程','タブレット名','理由','対応時刻','対応者','対応までの時間（分）','状態']].concat(andonLog.sort((a,b)=>a.tp-b.tp).map(j=>[ymd(j.tp),hm(j.tp),j.maker||'',j.tab,j.hin,j.td?hm(j.td):'',j.sei||'',j.td?Math.round((j.td-j.tp)/6000)/10:'',j.st==='done'?'対応済み':j.st==='cancel'?'取消':'呼出中'])),widths:[12,12,14,14,14,10,14,18,10]}]);
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='実績_'+date+'.xlsx';document.body.appendChild(a);a.click();
@@ -1616,7 +1702,7 @@ function openSettings(){
   <div class="f"><label>テストデータ</label><button class="btn sm" id="sClr">テストの記録を全部消す</button></div>
   <div class="foot"><button class="btn ghost" data-close>とじる</button><button class="btn fin" id="sSave">保存</button></div>`,()=>{
     $('#sSave').onclick=()=>{
-      S.name=$('#sName').value.trim()||'タブレット1';S.sn=[0,1,2,3].map(i=>($('#sn'+i)&&$('#sn'+i).value.trim())||SN(i));S.role=$('#sRole').value;S.mode=$('#sMode').value;S.split=$('#sSplit').value==='1';S.lay=$('#sLay').value;
+      S.name=$('#sName').value.trim()||'タブレット1';S.sn=[0,1,2,3].map(i=>($('#sn'+i)&&$('#sn'+i).value.trim())||SN(i));d1Built=false;S.role=$('#sRole').value;S.mode=$('#sMode').value;S.split=$('#sSplit').value==='1';S.lay=$('#sLay').value;
       S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;S.etaMin=+$('#sEta').value||180;S.idleMin=+$('#sIdle').value||15;S.scale=+$('#sScale').value;
       if(S.mode==='live'&&!S.gasUrl&&!onGas){alert('本番にするには Apps Script URL が必要です');return}
       if(S.mode==='live'&&!S.key){alert('本番にするには 合言葉 が必要です');return}
@@ -1652,7 +1738,7 @@ function openSettings(){
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr)}
         if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
         const lmsg=L?'\nリミット表 '+limitCount(L)+' 件も取り込みました':'';
-        if(m.length){master=m;save('master',master);save('masterV',Date.now());pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
+        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
     const dz=$('#sDrop');dz.onclick=()=>$('#sCsv').click();
@@ -1733,8 +1819,27 @@ kb_.addEventListener('pointerup',()=>endDrag(true));
 kb_.addEventListener('pointercancel',()=>endDrag(false));
 kb_.addEventListener('contextmenu',e=>{if(e.target.closest('.job'))e.preventDefault()});
 document.addEventListener('touchmove',e=>{if(drag&&drag.on)e.preventDefault()},{passive:false});
-$('#kBody').addEventListener('click',e=>{const r=e.target.closest('[data-kk]');if(r){openKake(r.dataset.kk);return}if(e.target.closest('#kOnlyBtn'))openKakeOnly()});
-$('#qk').addEventListener('input',renderDan1);
+$('#paneDan1').addEventListener('input',e=>{
+  const row=e.target.closest('.hr');if(!row)return;const p=plan[+row.dataset.i];if(!p)return;
+  if(!p.t0)p.t0=Date.now();
+  if(e.target.classList.contains('f-hin'))p.hin=e.target.value;else if(e.target.classList.contains('f-box'))p.box=e.target.value;
+  savePlan();updDan1();
+});
+$('#paneDan1').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;const t=e.target;if(!t.closest('.hr'))return;e.preventDefault();
+  const row=t.closest('.hr');
+  if(t.classList.contains('f-hin'))row.querySelector('.f-box').focus();
+  else if(t.classList.contains('f-box')){if(row.matches(':last-child')&&nh(plan[+row.dataset.i].hin))addRow();else{const nx=row.nextElementSibling;if(nx)nx.querySelector('.f-hin').focus()}}
+});
+$('#paneDan1').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]');if(!d)return;
+  plan.splice(+d.dataset.del,1);if(!plan.length)plan.push({hin:'',box:''});savePlan();buildDan1();
+});
+$('#d1pick').addEventListener('click',e=>{const c=e.target.closest('[data-cu]'),k=e.target.closest('[data-pk]');
+  if(c){pickCust=c.dataset.cu||null;renderPick()}else if(k)pickItem(k.dataset.pk)});
+$('#d1sent').addEventListener('click',e=>{if(e.target.closest('#d1sentBtn')){sentOpen=!sentOpen;updDan1()}});
+$('#d1add').onclick=addRow;$('#d1ok').onclick=confirmPlan;
+$('#kPri').onclick=openKakePri;$('#kEx').onclick=()=>openKake(null,'',true);
 $('#paneDan2').addEventListener('click',e=>{const b=e.target.closest('button[data-adv],button[data-ed]');if(!b)return;const id=b.closest('[data-id]').dataset.id;if(b.dataset.ed)openQty(id,'dan2');else advance(id)});
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;layout();renderHeader();if(view==='jisseki')renderJisseki();else renderAll()});
 $('#jissekiBody').addEventListener('click',e=>{
