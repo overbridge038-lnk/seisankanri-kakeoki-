@@ -295,12 +295,12 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <span class="sp"></span>
     <span class="ver" id="hClock"></span>
     <button class="tab" data-view="main">画面</button>
-    <button class="tab" data-view="limit">リミット表</button>
+    <button class="tab" data-view="limit">進捗管理（タイムリミット表）</button>
     <button class="tab" data-view="jisseki">実績</button>
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12p</span>
+    <span class="ver">ver 2026-11-12q</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -340,7 +340,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12p';
+const VER='2026-11-12q';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -426,7 +426,7 @@ function histFlush(){
   const before={},after={};
   ids.forEach(id=>{const a=jobs[id];if(!a)return;const sa=JSON.stringify(a),sb=jshadow[id];jshadow[id]=sa;if(sa===sb)return;before[id]=sb?JSON.parse(sb):null;after[id]=JSON.parse(sa)});
   if(!Object.keys(after).length)return;
-  HIST.u.push({label:lab||(Object.keys(after).some(id=>stg(after[id])===10)?'リミット表の編集':''),before,after,extra});if(HIST.u.length>HMAX)HIST.u.shift();HIST.r=[];renderHist();
+  HIST.u.push({label:lab||(Object.keys(after).some(id=>stg(after[id])===10)?'進捗管理（タイムリミット表）の編集':''),before,after,extra});if(HIST.u.length>HMAX)HIST.u.shift();HIST.r=[];renderHist();
 }
 function histApply(snap){
   histBusy=true;
@@ -686,7 +686,7 @@ function openKakePri(){
 }
 function drawKakePri(){
   const el=$('#pqList');if(!el)return;
-  if(!limit){el.innerHTML='<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
+  if(!limit){el.innerHTML='<div class="empty">進捗管理（タイムリミット表）がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
   const q=nh($('#pqIn').value),L=limitState().filter(x=>!x.nop&&(!q||nh(x.it.part).includes(q))).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i),todo=L.filter(x=>!x.isDone),dn=L.filter(x=>x.isDone),day0=new Date();day0.setHours(0,0,0,0);
   const row=(x,n)=>`<div class="prow${x.isDone?' dn':''}" data-kk="${esc(x.key)}"><span class="no">${x.isDone?'✓':n}</span><span class="h"><span class="ar">${esc(limit.areas[x.ai].area)}</span>${esc(x.it.part)}${x.it.piece?`<span class="pc">${x.it.piece}</span>`:''}${x.it.hand?'<span class="hb">手入力</span>':''}</span><span class="t">${hm0(limit.times[x.ti])}</span>${x.isDone?'<span class="rem">済</span>':`<span class="rem" data-eta="${day0.getTime()+limit.times[x.ti]*60000}"></span>`}<span class="go">›</span></div>`;
   el.innerHTML=`<div class="prh"><span>No</span><span>品番・背番</span><span>リミット</span><span>のこり時間</span><span></span></div>${todo.length?todo.map((x,i)=>row(x,i+1)).join(''):'<div class="empty">掛けるものは、ありません</div>'}
@@ -1118,7 +1118,7 @@ function limitState(){
 }
 function renderLimit(){
   const b=$('#limitBody');if(!b||(ldrag&&ldrag.on))return;
-  if(!limit){b.innerHTML='<div class="empty">リミット表がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
+  if(!limit){b.innerHTML='<div class="empty">進捗管理（タイムリミット表）がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き作業管理表のExcel<br>（「リミット表」シート入り）を入れてください</div>';return}
   const L=limitState(),m=L.model,need=L.filter(x=>!x.nop||x.isDone),done=need.filter(x=>x.isDone),late=L.filter(x=>x.late);
   const nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),pc=need.length?Math.round(done.length/need.length*100):0;
   const nx=limit.times.findIndex(t=>t>=nowM);
@@ -1127,7 +1127,7 @@ function renderLimit(){
   const cell=x=>{const it=x.it;   /* カードは品番だけ（ハンガー・必要数・基準時間は、タップした登録画面に出す） */
     return `<button class="li ${x.isDone?'done':x.late?'late':x.nop?'nop':''}${it.hand?' hand':''}${it.piece?' sp':''}" data-li="${esc(x.key)}">${x.isDone?'済 ':''}${esc(it.part)}${it.piece?`<span class="pc">${it.piece}</span>`:''}${it.hand?'<span class="hb">手入力</span>':''}</button>`};
   const colT=limit.times.map((t,ti)=>{const l=L.filter(x=>x.ti===ti);return{h:l.reduce((a,x)=>a+(x.it.h||0),0),n:l.length}});
-  b.innerHTML=`<div class="lp"><div class="t">${esc(limit.title||'リミット表')}　今日の進み具合 <b>${done.length}</b> / ${need.length} 件（${pc}%）</div>
+  b.innerHTML=`<div class="lp"><div class="t">${esc(limit.title||'進捗管理（タイムリミット表）')}　今日の進み具合 <b>${done.length}</b> / ${need.length} 件（${pc}%）</div>
     <div class="lbar"><div style="width:${pc}%"></div></div><div class="lch">${ach}</div></div>
    ${late.length?`<div class="lp" style="border-color:var(--bad)"><div class="t" style="color:var(--bad)">遅れ ${late.length} 件<span class="hint">　リミット時刻を過ぎて、まだ送信していない品番</span></div>
      <div class="lch">${late.map(x=>`<span class="late">${esc(limit.areas[x.ai].area)}　${hm0(limit.times[x.ti])}　${esc(llabel(x.it))}</span>`).join('')}</div></div>`:''}
@@ -1233,7 +1233,7 @@ function lend(e){
   if(!d.target){renderLimit();return}
   if(d.target.trash){
     if(u.hand){if(confirm('手入力した「'+llabel(u)+'」を削除しますか？\n（削除すると元に戻せません）'))leRemove(d.k);else renderLimit();return}
-    if(confirm('「'+llabel(u)+'」をリミット表から外しますか？\n（生産がないとき用。上の「外した品番」からいつでも戻せます）'))leRemove(d.k);else renderLimit();return;
+    if(confirm('「'+llabel(u)+'」を進捗管理（タイムリミット表）から外しますか？\n（生産がないとき用。上の「外した品番」からいつでも戻せます）'))leRemove(d.k);else renderLimit();return;
   }
   leMove(d.k,d.target.ai,d.target.ti,d.target.pos);renderLimit();
 }
@@ -1270,7 +1270,7 @@ function exportLimitXlsx(){
   const grid=[],merges=[],put=(r,c,v,st)=>{(grid[r]=grid[r]||[])[c]={v,s:st}};
   const merge=(r1,c1,r2,c2,v,st)=>{for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)put(r,c,r===r1&&c===c1?v:'',st);if(r2>r1||c2>c1)merges.push(colL(c1-1)+r1+':'+colL(c2-1)+r2)};
   const NC=1+4*T.length;
-  merge(1,1,1,NC,limit.title||'リミット表',sty({size:16,bold:1,border:'none',align:'left'}));
+  merge(1,1,1,NC,limit.title||'進捗管理（タイムリミット表）',sty({size:16,bold:1,border:'none',align:'left'}));
   merge(2,1,2,NC,'出力 '+nd.getFullYear()+'/'+pad(nd.getMonth()+1)+'/'+pad(nd.getDate())+' '+hm(nd.getTime())+'　済み '+dn+' ／ '+need.length+' 件（'+pc+'%）'+(late?'　遅れ '+late+' 件':''),sty({size:10,border:'none',align:'left',color:'FF5B6577'}));
   merge(3,1,4,1,'作業エリア',sty({bold:1,color:'FFFFFFFF',fill:'FF1F4E78'}));
   T.forEach((t,ti)=>{const c=2+ti*4;merge(3,c,3,c+3,hm0(t),sty({bold:1,color:'FFFFFFFF',fill:'FF1F4E78'}));['品番','必要時間','ハンガー',QL()].forEach((h,k)=>put(4,c+k,h,sty({bold:1,fill:'FFD9E1F2'})))});
@@ -1307,11 +1307,11 @@ function exportLimitXlsx(){
   const blob=zip([
     {name:'[Content_Types].xml',data:H+'<Types xmlns="http:\/\/schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
     {name:'_rels/.rels',data:H+'<Relationships xmlns="http:\/\/schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
-    {name:'xl/workbook.xml',data:H+'<workbook xmlns="http:\/\/schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http:\/\/schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="リミット表" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+    {name:'xl/workbook.xml',data:H+'<workbook xmlns="http:\/\/schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http:\/\/schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="進捗管理（タイムリミット表）" sheetId="1" r:id="rId1"/></sheets></workbook>'},
     {name:'xl/_rels/workbook.xml.rels',data:H+'<Relationships xmlns="http:\/\/schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http:\/\/schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
     {name:'xl/styles.xml',data:styles},{name:'xl/worksheets/sheet1.xml',data:sheet}]);
   const stamp=nd.getFullYear()+pad(nd.getMonth()+1)+pad(nd.getDate())+'_'+pad(nd.getHours())+pad(nd.getMinutes());
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((limit.title||'リミット表').replace(/\s+/g,'_')+'_'+stamp+'.xlsx').replace(/[\\/:*?"<>|]/g,'_');
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((limit.title||'進捗管理（タイムリミット表）').replace(/\s+/g,'_')+'_'+stamp+'.xlsx').replace(/[\\/:*?"<>|]/g,'_');
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
 }
 (()=>{const t=$('#limitBody');
@@ -1701,7 +1701,7 @@ function openSettings(){
   <div class="f"><label>品番マスタ</label><div><button class="btn sm" id="sTpl">ひな形（Excel）をつくる</button><input type="file" id="sCsv" accept=".xlsx,.csv,.txt" style="display:none">
     <div id="sDrop" class="drop"><b>ここにExcelをドラッグ＆ドロップ</b><small>（タッチして選ぶこともできます）</small></div>
     <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel<br>（「リミット表」シートがあれば、リミット表も取り込みます${limit?'。今 '+limitCount(limit)+' 件':''}）</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button></div></div>
-  <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉、<br>品番マスタ（今の ${master.length} 件）${limit?'・リミット表（'+limitCount(limit)+' 件）':''}が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
+  <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉、<br>品番マスタ（今の ${master.length} 件）${limit?'・進捗管理（タイムリミット表）（'+limitCount(limit)+' 件）':''}が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
   <div class="f"><label>削除のパスワード</label><div><button class="btn sm" id="sPw">パスワードを変える</button><div class="dnote">実績のデータを削除するとき・前の日までの残りを消すときに使います<br>（はじめは 0000。配布用ファイルにも入ります）</div></div></div>
   <div class="f"><label>前の日までの残り</label><div><button class="btn sm" id="sOld">前の日までの残りを消す</button><div class="dnote">検査用段取り・検査の一覧に残っている、前の日までの品番を消します。<br>全部のタブレットから消えます（記録は「取消」として残ります）</div></div></div>
   <div class="f"><label>テストデータ</label><button class="btn sm" id="sClr">テストの記録を全部消す</button></div>
@@ -1742,7 +1742,7 @@ function openSettings(){
       try{const rows=await readTable(f);const m=masterFromRows(rows);
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr)}
         if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
-        const lmsg=L?'\nリミット表 '+limitCount(L)+' 件も取り込みました':'';
+        const lmsg=L?'\n進捗管理（タイムリミット表） '+limitCount(L)+' 件も取り込みました':'';
         if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
