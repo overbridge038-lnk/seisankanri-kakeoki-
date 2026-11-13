@@ -301,7 +301,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12r</span>
+    <span class="ver">ver 2026-11-12s</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -341,7 +341,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12r';
+const VER='2026-11-12s';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1429,7 +1429,7 @@ async function afterDel(){   /* 送信がすむのを少し待ってから、実
 }
 function delJissekiSel(){
   const L=[...jsel].map(id=>jrows.find(x=>x.id===id)||andonLog.find(x=>x.id===id)||jobs[id]).filter(Boolean);if(!L.length)return;
-  const line=j=>stg(j)===9?'呼び出し：'+esc(j.hin)+'（'+hm(j.tp)+'　'+esc(j.tab||'')+'）':esc(j.hin)+'　'+fn(j.qty??j.n)+'箱（'+hm(j.t1||j.tp)+' 送信　'+esc(j.tab||j.tab0||'')+'）';
+  const line=j=>stg(j)===9?'呼び出し'+(j.hin?'：'+esc(j.hin):'')+'（'+hm(j.tp)+'　'+esc(j.tab||'')+'）':esc(j.hin)+'　'+fn(j.qty??j.n)+'箱（'+hm(j.t1||j.tp)+' 送信　'+esc(j.tab||j.tab0||'')+'）';
   askPw('選んだデータを削除しますか？',`<div class="big">${L.length}件</div><div class="sent" style="margin:.3rem 0">${L.slice(0,6).map(j=>`<div><span>${line(j)}</span></div>`).join('')}${L.length>6?`<div><span>ほか ${L.length-6} 件</span></div>`:''}</div><div style="color:var(--mut)">全部のタブレットから消えます（記録は「取消」として残ります）</div>`,'削除する',()=>{
     const now=Date.now(),prevs=L.map(lclone),ks=L.map(j=>{const k=lclone(j);k.st='cancel';k.td=now;k.pz=null;k.adj=(k.adj||[]).concat([[now,0,'データ削除','',S.name]]);return k});
     upsertAll(ks);jselMode=false;jsel.clear();afterDel();
@@ -1515,7 +1515,7 @@ function jissekiSheet(date,rows,andons){
   let no=0;const ids=[];
   L.forEach(({j,a})=>{
     no++;ids.push((a||j).id);
-    if(a){out.push([no,...E7,...E5,...E7,a.tab,'','','呼び出し：'+a.hin+(a.td?'（対応 '+hm(a.td)+' '+(a.sei||'')+'）':'（未対応）')]);return}
+    if(a){out.push([no,...E7,...E5,...E7,a.tab,'','','呼び出し'+(a.hin?'：'+a.hin:'')+(a.td?'（対応 '+hm(a.td)+' '+(a.sei||'')+'）':'（未対応）')]);return}
     const n1=+(j.qty??j.n),n2=+(j.n2??j.n),n3=+j.ins||0,c=jobCalc(j),kr=kakeRange(j);
     const exT=isEx(j)?'（突発）':'',b1=j.only?E7:[j.tab,j.hin+exT,n1,rng(kr[0],kr[1]),V(c.w1),V(c.a1),Df(c.a1,c.w1)];
     const b2=j.ta2?[j.tab2||'',j.hin+exT,n2,rng(j.t1,j.ta2),perBox(j.ta2-j.t1,n2)]:E5;
@@ -1623,21 +1623,20 @@ function toast(msg){$('#toastMsg').textContent=msg;if(HB)histLabel=msg;$('#toast
 
 /* ====== アンドン（呼び出し） ======
    異常やこまりごとをその場で知らせる。全端末の画面が黄・赤に点滅し、対応者が「対応します」を押すまで鳴り続ける。
-   記録は stage=9 の行として保存（hin=理由 / maker=工程 / sei=対応者 / tp=呼出 / td=対応）。 */
-const REASONS=['品質','設備','部品・材料','その他'];
+   記録は stage=9 の行として保存（hin=理由（いまは空。前の版の記録には入っている） / maker=工程 / sei=対応者 / tp=呼出 / td=対応）。 */
 const myProc=()=>sp4()?'テスト':S.role==='all'?'全部の工程':SN({dan1:0,kake:1,dan2:2,kensa:3}[S.role]||0);
 const activeAndons=()=>Object.values(jobs).filter(j=>stg(j)===9&&j.st==='wait').sort((a,b)=>a.tp-b.tp);
 function openAndon(){
   const mine=activeAndons().filter(j=>j.tab===S.name);
-  openModal(`<h3>呼び出し（${esc(myProc())}・${esc(S.name)}）</h3><div style="color:var(--mut)">理由を押すと、すぐに全部の端末で音が鳴ります</div>
-    <div class="rsn">${REASONS.map(r=>`<button class="btn end" data-r="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+  openModal(`<h3>呼び出し（${esc(myProc())}・${esc(S.name)}）</h3><div style="color:var(--mut)">「呼び出す」を押すと、すぐに全部の端末で音が鳴ります</div>
+    <div class="rsn" style="grid-template-columns:1fr"><button class="btn end" id="anGo">呼び出す</button></div>
     <div class="foot"><button class="btn ghost" data-close>もどる</button></div>`,()=>{
-    document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{closeModal();callAndon(b.dataset.r)});
+    $('#anGo').onclick=()=>{closeModal();callAndon()};
   });
 }
-function callAndon(reason){
+function callAndon(){
   const now=Date.now();
-  upsert({id:'A-'+S.name+'-'+now,tab:S.name,hin:reason,sei:'',maker:myProc(),qty:null,n:0,nq:0,t0:now,t1:null,eta:null,stage:9,st:'wait',tp:now,kb:[]});
+  upsert({id:'A-'+S.name+'-'+now,tab:S.name,hin:'',sei:'',maker:myProc(),qty:null,n:0,nq:0,t0:now,t1:null,eta:null,stage:9,st:'wait',tp:now,kb:[]});
   checkAndon();
 }
 function respondAndon(id,cancel){
@@ -1662,7 +1661,7 @@ function checkAndon(){
   if(!L.length){$('#andon').classList.remove('on');clearInterval(andonTimer);andonTimer=null;andonKey='';return}
   if(key!==andonKey){
     andonKey=key;
-    $('#anList').innerHTML=L.map(j=>`<div class="an1"><div>${esc(j.maker)}　${esc(j.hin)}<small>${esc(j.tab)}　${hm(j.tp)} から呼び出し中</small></div>
+    $('#anList').innerHTML=L.map(j=>`<div class="an1"><div>${esc(j.maker)}${j.hin?'　'+esc(j.hin):''}<small>${esc(j.tab)}　${hm(j.tp)} から呼び出し中</small></div>
       <div class="row"><button class="btn ghost" data-ac="${esc(j.id)}"${j.tab===S.name?'':' disabled'}>取り消す</button><button class="btn ok" data-ar="${esc(j.id)}"${j.tab===S.name?'':' disabled'}>対応します</button></div>${j.tab===S.name?'':`<div class="anlk">押せるのは、呼び出し中の「${esc(j.tab)}」だけです。現場へ行って、そのタブレットで押してください</div>`}</div>`).join('');
   }
   $('#andon').classList.add('on');
