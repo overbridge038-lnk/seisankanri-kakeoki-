@@ -301,7 +301,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12t</span>
+    <span class="ver">ver 2026-11-12u</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -341,7 +341,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12t';
+const VER='2026-11-12u';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1358,7 +1358,10 @@ function jDraw(){
   if(!jsh)return;const sh=jsh,R=sh.rows.slice(3),H=sh.rows[2],G=[1,8,13,20],DI=[7,19];
   const td=(v,i)=>`<td class="${typeof v==='number'?'n':''}${typeof v==='string'&&v.includes('（突発）')?' exm':''}${G.includes(i)?' gl tb':''}${DI.includes(i)&&typeof v==='number'?(v>0?' dpl':v<0?' dmi':''):''}">${esc(DI.includes(i)&&typeof v==='number'&&v>0?'+'+v:v)}</td>`;
   const dc=dayCalc(jrows),fm=o=>o.a>0?`<b>${effOf(o)}%</b>（正味 ${fmtn(o.w)}分 ÷ 実績 ${fmtn(o.a)}分）`:'―';
-  const sumH=`<div class="lp" style="margin-top:.6rem"><div class="t" style="font-size:1.05rem">${esc(jdate)} の能率　${esc(SN(0))} ${fm(dc.k)}　${esc(SN(3))} ${fm(dc.i)}　全体 ${fm(dc.t)}</div></div>`;
+  /* 正味時間が出ない理由を見える化：標準時間（基準秒・収容数）が足りない品番を知らせる */
+  const lack=[...new Set(jrows.filter(j=>j.st!=='cancel'&&stg(j)>=2&&stg(j)<9).filter(j=>{const sd=stdOf(j.hin),c=jobCalc(j);return(c.n1>0&&c.w1==null&&!j.only)||(c.n3>0&&c.w3==null)||(!sd&&(c.a1!=null||c.a3!=null))}).map(j=>{const sd=stdOf(j.hin);return j.hin+(sd?'（'+[sd.k==null&&'掛けの基準秒',sd.qk==null&&'素材の収容数',sd.i==null&&'検査の基準秒',sd.qi==null&&'塗完品の収容数'].filter(Boolean).join('・')+'なし）':'（標準時間なし）')}))];
+  const lackH=lack.length?`<div class="hint" style="color:var(--bad);font-weight:700;margin-top:.3rem">正味時間が出ない品番：${esc(lack.join('　'))}　→ 設定で、管理シート入りのExcelを取り込み直してください</div>`:'';
+  const sumH=`<div class="lp" style="margin-top:.6rem"><div class="t" style="font-size:1.05rem">${esc(jdate)} の能率　${esc(SN(0))} ${fm(dc.k)}　${esc(SN(3))} ${fm(dc.i)}　全体 ${fm(dc.t)}</div>${lackH}</div>`;
   /* Excelの「実績」シートと同じ内容を画面に表示（タブレットごと・工程ごとに横並び） */
   $('#jtab').innerHTML=R.length?`${sumH}<div style="overflow:auto;margin-top:.8rem"><table class="jt">
     <tr>${jselMode?'<th rowspan="2">選択</th>':''}<th rowspan="2">No</th><th colspan="7" class="g1">${esc(SN(0))}</th><th colspan="5" class="g2">${esc(SN(2))}</th><th colspan="7" class="g3">${esc(SN(3))}</th><th colspan="4" class="g4">異常記録</th></tr>
