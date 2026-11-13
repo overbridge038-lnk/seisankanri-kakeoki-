@@ -278,6 +278,14 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 .prow .rem{font-weight:800;font-size:1rem;white-space:nowrap}.prow .rem.soon{color:#c2410c}.prow .rem.late{color:var(--bad)}.prow.dn{background:#f0fdf4;color:#166534}.prow:active{background:#e0f2fe}
 .rc{min-height:0}.rc:empty{display:none}
 #kBtns{margin-bottom:.2rem;gap:.6rem}#kBtns .btn{flex:1;min-height:3.4rem;font-size:1.3rem}
+.ship{margin:.5rem;background:#fff;border:2px solid var(--line);border-radius:.8rem;padding:.6rem}
+.ship.new{background:#fef3c7;border-color:#f59e0b}
+.ship .shh{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:1.15rem}.ship .n0{display:inline-flex;align-items:center;justify-content:center;min-width:1.8rem;height:1.8rem;border-radius:.4rem;background:#b45309;color:#fff;font-weight:900}
+.ship .nb{background:#dc2626;color:#fff;border-radius:99px;padding:.1rem .6rem;font-size:.9rem;font-weight:800}
+.ship .shl{margin:.4rem 0;max-height:14rem;overflow:auto}
+.ship .shm{padding:.35rem .5rem;border-radius:.5rem;background:#f1f5f9;margin-bottom:.3rem}.ship .shm.me{background:#e0f2fe}.ship .shm.un{background:#fde68a;border:1px solid #f59e0b}
+.ship .who{font-weight:800;margin-right:.5rem}.ship .tm{font-size:.8rem;color:var(--mut)}.ship .tx{font-size:1.1rem;font-weight:600;white-space:pre-wrap;word-break:break-all;margin-top:.1rem}
+.ship .shi{display:flex;gap:.4rem;margin-top:.4rem}.ship .shi input{flex:1;min-width:0;font-size:1.1rem}.ship .shi .btn{min-height:2.8rem;padding:0 1.2rem}
 .chp{display:inline-block;margin-left:.4rem;padding:.05rem .55rem;border-radius:.5rem;background:#e0f2fe;color:#075985;font-size:.95rem;font-weight:800;vertical-align:middle;white-space:nowrap}
 .jr .ar{display:inline-block;margin-right:.3rem;padding:0 .3rem;border-radius:.3rem;background:#e2e8f0;color:#334155;font-size:.7rem;font-weight:800;vertical-align:middle}
 #main .jr.kd{background:#f0fdf4}
@@ -301,10 +309,11 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12u</span>
+    <span class="ver">ver 2026-11-13a</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
+      <div class="ship" id="shipBox"></div>
       <div class="panehead ph-dan" id="phDan1" style="display:none"></div>
       <div class="body"><div class="row" id="kBtns"><button class="btn" id="kPri" style="background:#0369a1;color:#fff">優先順番</button><button class="btn" id="kEx" style="background:#dc2626;color:#fff">突発</button></div>
         <div id="d1pick"></div><div class="sum"><span class="s" id="d1sum"></span></div><div id="d1rows"></div>
@@ -341,7 +350,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12u';
+const VER='2026-11-13a';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -421,7 +430,7 @@ let flushing=false;
 const jshadow={},HIST={u:[],r:[]},HMAX=50;
 let HB=null,histBusy=false,histLabel='',histNext=null;
 function shadowAll(){for(const k in jshadow)delete jshadow[k];for(const id in jobs)jshadow[id]=JSON.stringify(jobs[id])}
-function histNote(job){if(histBusy||stg(job)===9)return;if(!HB){HB={};Promise.resolve().then(histFlush)}HB[job.id]=1}
+function histNote(job){if(histBusy||stg(job)===9||stg(job)===11)return;if(!HB){HB={};Promise.resolve().then(histFlush)}HB[job.id]=1}
 function histFlush(){
   const ids=Object.keys(HB||{}),lab=histLabel,extra=histNext;HB=null;histLabel='';histNext=null;
   const before={},after={};
@@ -937,7 +946,7 @@ function layout(){layW=vStack();
   [['phDan1',0,1],['phKake',1,0],['phDan2',2,2],['phKensa',3,3]].forEach(([id,i,no])=>{const e=$('#'+id);e.style.display=split?'':'none';e.textContent=(no?no+'　':'')+SN(i)});
   document.documentElement.style.fontSize=(16*S.scale/100)+'px';
 }
-function renderAll(){renderHeader();if(view==='limit'&&!modalOpen)renderLimit();if(view==='main'){renderDan1();if(showKake())renderKake();renderDan2();if(showKensa())renderKensa()}}
+function renderAll(){renderHeader();if(view==='limit'&&!modalOpen)renderLimit();if(view==='main'){renderShip();renderDan1();if(showKake())renderKake();renderDan2();if(showKensa())renderKensa()}}
 
 function renderKake(){
   if(!showKake()||view!=='main')return;
@@ -1587,6 +1596,38 @@ let toastT=null;
 /* お知らせ（取り消しボタンはなし。元に戻すは、上の「元に戻す」「やり直す」ボタン）。第2引数は使わない */
 function toast(msg){$('#toastMsg').textContent=msg;if(HB)histLabel=msg;$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),3500)}
 
+/* ====== 0 出荷からの連絡（チャット） ======
+   出荷の人も現場も、同じ画面の「0 出荷からの連絡」に書き込む（名前＝タブレット名）。新しい順。7日ぶん残す。
+   1件＝stage 11 の記録（hin=本文 / tab=書いた端末 / tp=書いた時刻）。実績・Excelには出ない。元に戻す／やり直すの対象外。
+   自分以外の新しい書き込みがあると、枠が黄色くなり、短い音を1回鳴らす。「読んだ」で戻る（読んだ時刻はこの端末にだけ覚える） */
+const SHIP_DAYS=7,SHIP_MAX=200;let shipAll=false,shipBeeped=Date.now();
+const shipMsgs=()=>{const lim=Date.now()-SHIP_DAYS*864e5;return Object.values(jobs).filter(j=>stg(j)===11&&j.st!=='cancel'&&(j.tp||0)>=lim).sort((a,b)=>b.tp-a.tp)};
+function shipSend(){
+  const el=$('#shipIn');if(!el)return;const t=el.value.replace(/\s+/g,' ').trim();if(!t){el.focus();return}
+  const now=Date.now();el.value='';   /* 先に空にする（送信で画面が描き直されるとき、書いた文字が残らないように） */
+  upsert({id:'C-'+S.name+'-'+now+'-'+Math.random().toString(36).slice(2,5),tab:S.name,hin:t.slice(0,SHIP_MAX),sei:'',maker:'連絡',qty:null,n:0,nq:0,ins:0,t0:now,t1:null,eta:null,stage:11,st:'wait',tp:now,kb:[]});
+  Object.values(jobs).filter(j=>stg(j)===11&&j.st==='wait'&&(j.tp||0)<now-SHIP_DAYS*864e5).forEach(j=>{j.st='done';j.td=now;upsert(j)});   /* 7日より前のものは終わりにして、一覧から消す */
+  save('shipRead',now);shipBeeped=now;renderShip();const n=$('#shipIn');if(n)n.focus();
+}
+function renderShip(){
+  const box=$('#shipBox');if(!box)return;
+  if(!showDan1()||view!=='main'){box.style.display='none';return}
+  box.style.display='';
+  const L=shipMsgs(),rd=load('shipRead',0),un=L.filter(j=>j.tab!==S.name&&j.tp>rd),show=shipAll?L:L.slice(0,4),keep=box.querySelector('#shipIn'),draft=keep?keep.value:'',hadFocus=!!keep&&document.activeElement===keep;
+  box.classList.toggle('new',un.length>0);
+  box.innerHTML=`<div class="shh"><span class="n0">0</span><b>出荷からの連絡</b>${un.length?`<span class="nb">新着 ${un.length} 件</span><button class="btn sm" id="shipRd">読んだ</button>`:''}</div>
+   <div class="shl">${show.length?show.map(j=>`<div class="shm${j.tab===S.name?' me':''}${j.tp>rd&&j.tab!==S.name?' un':''}"><span class="who">${esc(j.tab)}</span><span class="tm">${new Date(j.tp).getMonth()+1}/${new Date(j.tp).getDate()} ${hm(j.tp)}</span><div class="tx">${esc(j.hin)}</div></div>`).join(''):'<div class="hint">まだ連絡はありません</div>'}</div>
+   ${L.length>4?`<button class="btn sm" id="shipMore">${shipAll?'新しい4件だけ見る':'ぜんぶ見る（'+L.length+'件）'}</button>`:''}
+   <div class="shi"><input id="shipIn" maxlength="${SHIP_MAX}" placeholder="連絡や返信を入れる（${SHIP_MAX}文字まで）" autocomplete="off" value="${esc(draft)}"><button class="btn ok" id="shipGo">送信</button></div>`;
+  const ni=box.querySelector('#shipIn');if(ni&&hadFocus){ni.focus();try{ni.setSelectionRange(ni.value.length,ni.value.length)}catch(e){}}
+  const latest=un.length?un[0].tp:0;if(latest>shipBeeped){shipBeeped=latest;beep(1500,.12,2)}   /* 新しい連絡：短い音 */
+}
+$('#shipBox').addEventListener('click',e=>{
+  if(e.target.closest('#shipGo'))shipSend();
+  else if(e.target.closest('#shipRd')){save('shipRead',Date.now());renderShip()}
+  else if(e.target.closest('#shipMore')){shipAll=!shipAll;renderShip()}
+});
+$('#shipBox').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='shipIn'&&!e.isComposing){e.preventDefault();shipSend()}});
 /* ====== アンドン（呼び出し） ======
    異常やこまりごとをその場で知らせる。全端末の画面が黄・赤に点滅し、対応者が「対応します」を押すまで鳴り続ける。
    記録は stage=9 の行として保存（hin=理由（いまは空。前の版の記録には入っている） / maker=工程 / sei=対応者 / tp=呼出 / td=対応）。 */
