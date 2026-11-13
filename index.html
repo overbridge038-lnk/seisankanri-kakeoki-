@@ -301,7 +301,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12s</span>
+    <span class="ver">ver 2026-11-12t</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -341,7 +341,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12s';
+const VER='2026-11-12t';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1345,7 +1345,7 @@ function exportLimitXlsx(){
 let jdate=ymd(Date.now()),jrows=[],jselMode=false,jsel=new Set(),jsh=null;
 function jShell(){
   const b=$('#jissekiBody');
-  b.innerHTML=`<div id="jchart" class="lp"></div><div class="row" style="align-items:center"><input type="date" id="jd" value="${jdate}"><button class="btn sm" id="jgo">表示</button><button class="btn ok" id="jxl" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button>${jselMode?'':'<button class="btn sm" id="jDelMode" style="color:var(--bad);border-color:#fca5a5">削除</button>'}<span id="jmsg" style="color:var(--mut)"></span></div>
+  b.innerHTML=`<div class="row" style="align-items:center"><input type="date" id="jd" value="${jdate}"><button class="btn sm" id="jgo">表示</button><button class="btn ok" id="jxl" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button>${jselMode?'':'<button class="btn sm" id="jDelMode" style="color:var(--bad);border-color:#fca5a5">削除</button>'}<span id="jmsg" style="color:var(--mut)"></span></div>
    ${jselMode?`<div class="jbar"><span>消すデータを選んでください　選んだ <b id="jN">0</b> 件</span><button class="btn sm" id="jSelAll">すべて選ぶ／はずす</button><button class="btn red" id="jDelGo" disabled>選んだものを削除</button><button class="btn ghost" id="jDelCancel">やめる</button></div>`:''}<div id="jtab"></div>`;
   $('#jd').onchange=e=>{jdate=e.target.value;jsel.clear();renderJisseki()};
   $('#jgo').onclick=renderJisseki;$('#jxl').onclick=()=>exportExcel(jdate,jrows);
@@ -1368,45 +1368,8 @@ function jDraw(){
   :'<div class="empty">この日の実績はありません</div>';
   jRefreshSel();
 }
-/* ---- 日当たりの能率推移（直近30日の折れ線：掛け・検査・全体。能率＝正味÷実績） ---- */
-const chartCache={at:0,rows:null,note:''};
-async function loadChartRows(){
-  const now=Date.now(),to=ymd(now),from=ymd(now-29*864e5),local=()=>Object.values(jobs).filter(j=>j.t1&&stg(j)>=2&&stg(j)<9);
-  if(!live())return{rows:local(),note:'テストモードは、この端末にある2日ぶんだけ'};
-  try{const j=await gas('GET',{action:'range',from,to});return{rows:j.jobs,note:''}}
-  catch(e){return{rows:null,note:'過去の日を読むには、Apps Script（Code.gs）を新しい版に貼り直してください'}}
-}
-function chartDays(){
-  const td=ymd(Date.now()),now=Date.now(),loc=Object.values(jobs).filter(j=>j.t1&&stg(j)>=2&&stg(j)<9),past=(chartCache.rows||[]).filter(j=>j.t1&&ymd(j.t1)<td);
-  const all=past.concat(loc.filter(j=>ymd(j.t1)>=td||!chartCache.rows)),days=[];
-  const seen=new Set(),rows=[];all.forEach(j=>{const k=j.id+'|'+ymd(j.t1);if(seen.has(j.id))return;seen.add(j.id);rows.push(j)});
-  for(let i=29;i>=0;i--){const d=ymd(now-i*864e5),dc=dayCalc(rows.filter(j=>ymd(j.t1)===d));days.push({d,k:effOf(dc.k),i:effOf(dc.i),t:effOf(dc.t),dc})}
-  return days;
-}
-function chartHtml(days,sel,note){
-  const W=760,H=250,L=42,R=12,T=14,B=30,pw=W-L-R,ph=H-T-B,vals=days.flatMap(d=>[d.k,d.i,d.t]).filter(v=>v!=null),vmax=Math.max(120,Math.ceil(Math.max(0,...vals)/20)*20);
-  const x=i=>L+pw*(i/(days.length-1)),y=v=>T+ph*(1-v/vmax),COL={k:'#6d28d9',i:'#15803d',t:'#0f172a'},NM={k:SN(0),i:SN(3),t:'全体'};
-  const grid=[];for(let v=0;v<=vmax;v+=20)grid.push(`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="${v===100?'#dc2626':'#e2e8f0'}" ${v===100?'stroke-dasharray="5 4" stroke-width="1.5"':''}/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#64748b">${v}%</text>`);
-  const line=key=>{let d='',pen=false;days.forEach((o,i)=>{if(o[key]==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(o[key]).toFixed(1)+' ';pen=true});return `<path d="${d}" fill="none" stroke="${COL[key]}" stroke-width="2.4" stroke-linejoin="round"/>`+days.map((o,i)=>o[key]==null?'':`<circle cx="${x(i).toFixed(1)}" cy="${y(o[key]).toFixed(1)}" r="3.6" fill="${COL[key]}"/>`).join('')};
-  const si=days.findIndex(o=>o.d===sel),bw=pw/(days.length-1);
-  const xl=days.map((o,i)=>i%5===4||i===days.length-1?`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#64748b">${+o.d.slice(5,7)}/${+o.d.slice(8)}</text>`:'').join('');
-  const hit=days.map((o,i)=>`<rect data-cd="${o.d}" x="${(x(i)-bw/2).toFixed(1)}" y="${T}" width="${bw.toFixed(1)}" height="${ph}" fill="transparent" style="cursor:pointer"/>`).join('');
-  const o=days.find(d=>d.d===sel)||days[days.length-1],fm=(k,c)=>c.a>0?`${NM[k]} <b>${effOf(c)}%</b>（正味 ${fmtn(c.w)}分／実績 ${fmtn(c.a)}分）`:`${NM[k]} ―`;
-  return `<div class="t" style="font-size:1.15rem">日当たりの能率推移（直近30日）<span class="hint">　能率＝正味時間÷実績時間。100%以上が目標。点を押すと、その日の実績表に切りかえます</span></div>
-   <div class="lch" style="margin:.2rem 0">${['k','i','t'].map(k=>`<span style="border-color:${COL[k]};color:${COL[k]}">● ${esc(NM[k])}</span>`).join('')}</div>
-   <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-height:300px;background:#fff;border-radius:.6rem" role="img" aria-label="日当たりの能率推移">${grid.join('')}${si>=0?`<rect x="${(x(si)-bw/2).toFixed(1)}" y="${T}" width="${bw.toFixed(1)}" height="${ph}" fill="#fde68a" opacity=".55"/>`:''}${xl}${line('t')}${line('k')}${line('i')}${hit}</svg>
-   <div style="margin-top:.2rem;font-size:1rem">${esc(o.d)}　${fm('k',o.dc.k)}　${fm('i',o.dc.i)}　${fm('t',o.dc.t)}</div>${note?`<div class="hint">${esc(note)}</div>`:''}`;
-}
-async function drawJchart(force){
-  const el=$('#jchart');if(!el)return;
-  if(force||!chartCache.rows&&!chartCache.note||Date.now()-chartCache.at>300000){
-    el.innerHTML='<div class="t" style="font-size:1.15rem">日当たりの能率推移（直近30日）<span class="hint">　読み込み中…</span></div>';
-    const r=await loadChartRows();chartCache.at=Date.now();chartCache.rows=r.rows;chartCache.note=r.note;
-  }
-  const e2=$('#jchart');if(!e2)return;e2.innerHTML=chartHtml(chartDays(),jdate,chartCache.note);
-}
 async function renderJisseki(){
-  jShell();drawJchart();
+  jShell();
   $('#jmsg').textContent='読み込み中…';
   jrows=(await listByDate(jdate)).sort((a,b)=>a.t1-b.t1);$('#jmsg').textContent='';
   jsh=jissekiSheet(jdate,jrows,andonLog);
@@ -1849,7 +1812,6 @@ $('#kPri').onclick=openKakePri;$('#kEx').onclick=()=>openKake(null,'',true);
 $('#paneDan2').addEventListener('click',e=>{const b=e.target.closest('button[data-adv],button[data-ed]');if(!b)return;const id=b.closest('[data-id]').dataset.id;if(b.dataset.ed)openQty(id,'dan2');else advance(id)});
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{view=b.dataset.view;layout();renderHeader();if(view==='jisseki')renderJisseki();else renderAll()});
 $('#jissekiBody').addEventListener('click',e=>{
-  const cd=e.target.closest('[data-cd]');if(cd){jdate=cd.dataset.cd;jsel.clear();renderJisseki();return}   /* グラフの点を押す → その日の実績表 */
   if(e.target.closest('#jDelMode')){jselMode=true;jsel.clear();jShell();jDraw();return}
   if(e.target.closest('#jDelCancel')){jselMode=false;jsel.clear();jShell();jDraw();return}
   if(e.target.closest('#jSelAll')){const ids=jsh?jsh.ids:[],all=ids.length&&ids.every(i=>jsel.has(i));ids.forEach(i=>all?jsel.delete(i):jsel.add(i));jRefreshSel();return}
