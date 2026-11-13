@@ -136,6 +136,7 @@ header.r-dan{background:#6d28d9}
 @keyframes an{50%{background:#dc2626;color:#fff}}
 #andon h2{font-size:3rem;margin:0;color:inherit}
 .anl{display:flex;flex-direction:column;gap:.8rem;width:min(46rem,100%)}
+.anlk{flex-basis:100%;font-size:.85rem;font-weight:700;color:#7f1d1d;margin-top:.3rem}
 .an1{background:rgba(255,255,255,.92);color:#111;border-radius:1rem;padding:1rem;display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;justify-content:space-between;font-size:1.6rem;font-weight:900}
 .an1 small{display:block;font-size:1.1rem;color:#475569;font-weight:700}
 .an1 .btn{min-height:4rem;font-size:1.5rem}
@@ -300,7 +301,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-12q</span>
+    <span class="ver">ver 2026-11-12r</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -340,7 +341,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-12q';
+const VER='2026-11-12r';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1641,6 +1642,7 @@ function callAndon(reason){
 }
 function respondAndon(id,cancel){
   const j=jobs[id];if(!j)return;
+  if(j.tab!==S.name){toast('呼び出し中のタブレット（'+j.tab+'）でしか押せません');return}   /* ポカヨケ：呼んだ場所に行って、そのタブレットで押す */
   j.st=cancel?'cancel':'done';j.td=Date.now();j.sei=cancel?'':S.name;upsert(j);
   toast(cancel?'呼び出しを取り消しました':S.name+' が対応します');checkAndon();
 }
@@ -1656,12 +1658,12 @@ function siren(){  /* 工場の騒音（低い音）に負けない高めの2音
   if(navigator.vibrate)navigator.vibrate([300,100,300]);
 }
 function checkAndon(){
-  const L=activeAndons(),key=L.map(j=>j.id).join(',');
+  const L=activeAndons(),key=S.name+'|'+L.map(j=>j.id).join(',');
   if(!L.length){$('#andon').classList.remove('on');clearInterval(andonTimer);andonTimer=null;andonKey='';return}
   if(key!==andonKey){
     andonKey=key;
     $('#anList').innerHTML=L.map(j=>`<div class="an1"><div>${esc(j.maker)}　${esc(j.hin)}<small>${esc(j.tab)}　${hm(j.tp)} から呼び出し中</small></div>
-      <div class="row">${j.tab===S.name?`<button class="btn ghost" data-ac="${esc(j.id)}">取り消す</button>`:''}<button class="btn ok" data-ar="${esc(j.id)}">対応します</button></div></div>`).join('');
+      <div class="row"><button class="btn ghost" data-ac="${esc(j.id)}"${j.tab===S.name?'':' disabled'}>取り消す</button><button class="btn ok" data-ar="${esc(j.id)}"${j.tab===S.name?'':' disabled'}>対応します</button></div>${j.tab===S.name?'':`<div class="anlk">押せるのは、呼び出し中の「${esc(j.tab)}」だけです。現場へ行って、そのタブレットで押してください</div>`}</div>`).join('');
   }
   $('#andon').classList.add('on');
   if(!andonTimer){siren();andonTimer=setInterval(siren,1700)}
