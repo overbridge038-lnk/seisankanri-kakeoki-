@@ -284,6 +284,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 .ship .nb{background:#dc2626;color:#fff;border-radius:99px;padding:.1rem .6rem;font-size:.9rem;font-weight:800}
 .ship .shl{margin:.4rem 0;max-height:14rem;overflow:auto}
 .ship .shm{padding:.35rem .5rem;border-radius:.5rem;background:#f1f5f9;margin-bottom:.3rem}.ship .shm.me{background:#e0f2fe}.ship .shm.un{background:#fde68a;border:1px solid #f59e0b}
+.ship .shd{float:right;margin-left:.5rem;min-height:2.2rem;padding:0 .8rem;border:1px solid #fca5a5;background:#fff;color:var(--bad);border-radius:.5rem;font-size:.9rem;font-weight:800;cursor:pointer}
 .ship .who{font-weight:800;margin-right:.5rem}.ship .tm{font-size:.8rem;color:var(--mut)}.ship .tx{font-size:1.1rem;font-weight:600;white-space:pre-wrap;word-break:break-all;margin-top:.1rem}
 .ship .shi{display:flex;gap:.4rem;margin-top:.4rem}.ship .shi input{flex:1;min-width:0;font-size:1.1rem}.ship .shi .btn{min-height:2.8rem;padding:0 1.2rem}
 .chp{display:inline-block;margin-left:.4rem;padding:.05rem .55rem;border-radius:.5rem;background:#e0f2fe;color:#075985;font-size:.95rem;font-weight:800;vertical-align:middle;white-space:nowrap}
@@ -309,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-13a</span>
+    <span class="ver">ver 2026-11-13b</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -350,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-13a';
+const VER='2026-11-13b';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1609,6 +1610,12 @@ function shipSend(){
   Object.values(jobs).filter(j=>stg(j)===11&&j.st==='wait'&&(j.tp||0)<now-SHIP_DAYS*864e5).forEach(j=>{j.st='done';j.td=now;upsert(j)});   /* 7日より前のものは終わりにして、一覧から消す */
   save('shipRead',now);shipBeeped=now;renderShip();const n=$('#shipIn');if(n)n.focus();
 }
+function shipDel(id){   /* 消せるのは、自分の端末で書いたものだけ（ポカヨケ）。消すと全部の端末から消える */
+  const j=jobs[id];if(!j||stg(j)!==11)return;
+  if(j.tab!==S.name){toast('消せるのは、書いた端末（'+j.tab+'）だけです');return}
+  if(!confirm('この連絡を消しますか？\n「'+j.hin.slice(0,40)+(j.hin.length>40?'…':'')+'」\n（全部の端末から消えます）'))return;
+  j.st='cancel';j.td=Date.now();upsert(j);renderShip();toast('連絡を消しました');
+}
 function renderShip(){
   const box=$('#shipBox');if(!box)return;
   if(!showDan1()||view!=='main'){box.style.display='none';return}
@@ -1616,7 +1623,7 @@ function renderShip(){
   const L=shipMsgs(),rd=load('shipRead',0),un=L.filter(j=>j.tab!==S.name&&j.tp>rd),show=shipAll?L:L.slice(0,4),keep=box.querySelector('#shipIn'),draft=keep?keep.value:'',hadFocus=!!keep&&document.activeElement===keep;
   box.classList.toggle('new',un.length>0);
   box.innerHTML=`<div class="shh"><span class="n0">0</span><b>出荷からの連絡</b>${un.length?`<span class="nb">新着 ${un.length} 件</span><button class="btn sm" id="shipRd">読んだ</button>`:''}</div>
-   <div class="shl">${show.length?show.map(j=>`<div class="shm${j.tab===S.name?' me':''}${j.tp>rd&&j.tab!==S.name?' un':''}"><span class="who">${esc(j.tab)}</span><span class="tm">${new Date(j.tp).getMonth()+1}/${new Date(j.tp).getDate()} ${hm(j.tp)}</span><div class="tx">${esc(j.hin)}</div></div>`).join(''):'<div class="hint">まだ連絡はありません</div>'}</div>
+   <div class="shl">${show.length?show.map(j=>`<div class="shm${j.tab===S.name?' me':''}${j.tp>rd&&j.tab!==S.name?' un':''}"><span class="who">${esc(j.tab)}</span><span class="tm">${new Date(j.tp).getMonth()+1}/${new Date(j.tp).getDate()} ${hm(j.tp)}</span>${j.tab===S.name?`<button class="shd" data-sd="${esc(j.id)}" aria-label="この連絡を消す">消す</button>`:''}<div class="tx">${esc(j.hin)}</div></div>`).join(''):'<div class="hint">まだ連絡はありません</div>'}</div>
    ${L.length>4?`<button class="btn sm" id="shipMore">${shipAll?'新しい4件だけ見る':'ぜんぶ見る（'+L.length+'件）'}</button>`:''}
    <div class="shi"><input id="shipIn" maxlength="${SHIP_MAX}" placeholder="連絡や返信を入れる（${SHIP_MAX}文字まで）" autocomplete="off" value="${esc(draft)}"><button class="btn ok" id="shipGo">送信</button></div>`;
   const ni=box.querySelector('#shipIn');if(ni&&hadFocus){ni.focus();try{ni.setSelectionRange(ni.value.length,ni.value.length)}catch(e){}}
@@ -1626,6 +1633,7 @@ $('#shipBox').addEventListener('click',e=>{
   if(e.target.closest('#shipGo'))shipSend();
   else if(e.target.closest('#shipRd')){save('shipRead',Date.now());renderShip()}
   else if(e.target.closest('#shipMore')){shipAll=!shipAll;renderShip()}
+  else{const d=e.target.closest('[data-sd]');if(d)shipDel(d.dataset.sd)}
 });
 $('#shipBox').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='shipIn'&&!e.isComposing){e.preventDefault();shipSend()}});
 /* ====== アンドン（呼び出し） ======
