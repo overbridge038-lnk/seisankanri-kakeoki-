@@ -310,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16c</span>
+    <span class="ver">ver 2026-11-16d</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16c';
+const VER='2026-11-16d';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1031,7 +1031,7 @@ function limitFromKanri(rows){
     ts.forEach(t=>items.push({t,part,hanger:cHg>=0?String(r[cHg]||'').replace(/[\s　]+/g,'').trim():'',qm,hm}))});
   if(!items.length)return null;
   const times=[...new Set(items.map(x=>x.t))].sort((a,b)=>a-b),mo=new Date().getMonth()+1;
-  const cols=times.map(t=>items.filter(x=>x.t===t).map(x=>({part:x.part,hours:x.hm[mo]!=null?'('+x.hm[mo]+'h)':'',hanger:x.hanger,qty:x.qm[mo]!=null?x.qm[mo]:0,qm:x.qm,hm:x.hm})));
+  const cols=times.map(t=>items.filter(x=>x.t===t).map(x=>({part:x.part,hours:x.hm[mo]!=null?'('+x.hm[mo]+'h)':'',hanger:x.hanger,qty:x.qm[mo]!=null?x.qm[mo]:'',qm:x.qm,hm:x.hm})));
   return{title:'',times,areas:[{area:'全体',cols}],kanri:true};
 }
 /* リミット表のHTML（中に <script type="application/json" id="limit-data"> の計画が入っているもの）から作る。品番マスタは変えない */
@@ -1085,7 +1085,7 @@ const llabel=u=>u.part+(u.piece?'（'+u.piece+'）':'');
 function limitModel(){
   const E=leGet(),T=limit.times,base={},bo=limit.areas.map(()=>T.map(()=>[]));
   limit.areas.forEach((a,ai)=>a.cols.forEach((c,ti)=>{const seen={};c.forEach(it=>{const n=seen[it.part]=(seen[it.part]||0)+1,k=a.area+'|'+T[ti]+'|'+it.part+'|'+(n-1);
-    const mo=new Date().getMonth()+1,hq=it.hm&&it.hm[mo]!=null?it.hm[mo]:null,qq=it.qm?(it.qm[mo]!=null?it.qm[mo]:0):it.qty;   /* 管理シートから作った札は、今月の列の値 */
+    const mo=new Date().getMonth()+1,hq=it.hm&&it.hm[mo]!=null?it.hm[mo]:null,qq=it.qm?(it.qm[mo]!=null?it.qm[mo]:''):it.qty;   /* 管理シートから作った札は、今月の列の値 */
     base[k]={key:k,part:it.part,h:hq!=null?hq:parseFloat(String(it.hours).replace(/[^\d.]/g,''))||0,hanger:it.hanger,qty:qq,ai,ti};bo[ai][ti].push(k)})}));
   const ad=E.added||{};Object.keys(ad).forEach(k=>{const a=ad[k];
     if(a&&a.part&&limit.areas[a.ai]&&a.ti>=0&&a.ti<T.length){base[k]={key:k,part:a.part,h:+a.h||0,hanger:a.hanger||'',qty:a.qty===''||a.qty==null?'':+a.qty,hand:true,ai:a.ai,ti:a.ti};bo[a.ai][a.ti].push(k)}});
@@ -1157,9 +1157,9 @@ function limitState(){
   const by={};L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{(by[nh(x.it.part)]=by[nh(x.it.part)]||[]).push(x)});
   /* 済＝その品番を検査用段取りへ1回送ったら、リミットの早い札から1つずつ済にする（必要数に届かなくてもよい。2回仕掛けは札を2つに分けておく） */
   Object.keys(by).forEach(k=>{const js=q[k]||[];let ji=0;
-    by[k].forEach(x=>{x.need=0;x.done=0;x.rem=0;x.last=null;if(!(x.it.qty>0)&&!x.it.hand)return;   /* 生産なしの札は数えない */
+    by[k].forEach(x=>{x.need=0;x.done=0;x.rem=0;x.last=null;if(!(x.it.qty>0)&&x.it.qty!==''&&!x.it.hand)return;   /* 生産なしの札は数えない（必要数が読めない札は数える） */
       if(ji<js.length){x.done=1;x.last=js[ji++]}})});
-  L.forEach(x=>{x.nop=!(x.it.qty>0)&&!x.it.hand;x.isDone=x.done>0;x.job=x.isDone?x.last:null;x.late=!x.isDone&&!x.nop&&nowM>limit.times[x.ti]});
+  L.forEach(x=>{x.nop=!(x.it.qty>0)&&x.it.qty!==''&&!x.it.hand;x.isDone=x.done>0;x.job=x.isDone?x.last:null;x.late=!x.isDone&&!x.nop&&nowM>limit.times[x.ti]});
   L.model=m;return L;
 }
 function renderLimit(){
@@ -1180,7 +1180,7 @@ function renderLimit(){
    <div class="hint">品番をタップ → ${esc(SN(0))}の登録画面（掛けの開始・終了と箱数）が開きます（1回送ると「済」）。赤＝リミット時刻を過ぎて未完了</div>
    <div class="row" style="align-items:center;gap:.5rem"><button class="btn sm" id="lPrev">前日の配置に戻す</button><button class="btn sm" id="lSavePrev">今の配置を保存</button><button class="btn sm" id="lReset">Excelの並びに戻す</button>${m.removed.length?`<button class="btn sm" id="lRem">外した品番（${m.removed.length}）</button>`:''}<span class="lzoom"><button class="btn sm" id="lzOut" aria-label="縮小">－</button><span id="lzLbl">100%</span><button class="btn sm" id="lzIn" aria-label="拡大">＋</button><button class="btn sm" id="lzFit">全体</button></span><button class="btn ok" id="lXlsx" style="min-height:2.8rem;font-size:1.05rem">Excelに出力</button></div>
    <div class="hint">${esc(lePrevLabel())}</div>
-   <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力</div>
+   <div class="hint">品番を<b>長押し</b>して動かす＝並べ替え（別のエリア・別の時刻の列へも。入れた列の時刻がリミットになります）／ゴミ箱の上で離す＝外す／動かさずに離す＝分割／空いた所をタップ＝品番を手入力<br>マウスのとき：押したまま動かす＝並べ替え・外す／右クリック＝分割</div>
    <div class="lwrap"><div id="lzbox"><table class="lt"><tr><th>エリア</th>${limit.times.map((t,i)=>`<th class="${i===nx?'now':''}">${hm0(t)}<small>計 ${(Math.round(colT[i].h*10)/10).toFixed(1)}h（${colT[i].n}品番）</small></th>`).join('')}</tr>
    ${limit.areas.map((a,ai)=>`<tr><td class="ar">${esc(a.area)}</td>${limit.times.map((t,ti)=>`<td data-ai="${ai}" data-ti="${ti}">${L.filter(x=>x.ai===ai&&x.ti===ti).map(cell).join('')}</td>`).join('')}</tr>`).join('')}</table></div></div>`;
   applyLimitZoom();
@@ -1238,10 +1238,11 @@ function lstart(e){
   if(view!=='limit'||modalOpen||(e.button!=null&&e.button>0))return;
   if(e.touches&&e.touches.length>1){if(lpress)clearTimeout(lpress.timer);lpress=null;return}   /* 2本指は拡大・縮小 */
   const li=e.target.closest('.li[data-li]');if(!li)return;const p=lpt(e);
-  lpress={k:li.dataset.li,x:p.clientX,y:p.clientY,timer:setTimeout(()=>lbegin(li),450)};
+  lpress={k:li.dataset.li,x:p.clientX,y:p.clientY,li,mouse:!e.touches,timer:setTimeout(()=>lbegin(li),450)};
 }
 function lbegin(li){
-  if(!lpress||!li.isConnected){lpress=null;return}
+  if(lpress&&!li.isConnected)li=[...document.querySelectorAll('#limitBody .li[data-li]')].find(x=>x.dataset.li===lpress.k);   /* 押しているあいだに画面が描き直されても（ほかの端末の更新など）、同じ札をつかむ */
+  if(!lpress||!li){lpress=null;return}
   const k=lpress.k;ldrag={k,on:true,x:lpress.x,y:lpress.y,moved:false,target:null};
   if(navigator.vibrate)navigator.vibrate(30);
   li.classList.add('dragging');const g=$('#lghost'),u=limitModel().units[k];g.textContent=u?llabel(u):k;g.style.display='block';lghostAt(lpress.x,lpress.y);
@@ -1250,7 +1251,8 @@ function lbegin(li){
 const lghostAt=(x,y)=>{const g=$('#lghost');g.style.left=(x+12)+'px';g.style.top=(y-36)+'px'};
 function lmove(e){
   if(!lpress)return;const p=lpt(e);
-  if(!ldrag){if(Math.hypot(p.clientX-lpress.x,p.clientY-lpress.y)>10){clearTimeout(lpress.timer);lpress=null}return}   /* 長押しの前に指が動いたらスクロール */
+  if(!ldrag){if(Math.hypot(p.clientX-lpress.x,p.clientY-lpress.y)>10){clearTimeout(lpress.timer);if(lpress.mouse)lbegin(lpress.li);else lpress=null}   /* 長押しの前に指が動いたらスクロール。マウスは長押しを待たずに、押したまま動かせば並べ替え */
+    if(!ldrag)return}
   e.preventDefault();
   if(!ldrag.moved&&Math.hypot(p.clientX-ldrag.x,p.clientY-ldrag.y)>10)ldrag.moved=true;
   lghostAt(p.clientX,p.clientY);
@@ -1364,7 +1366,7 @@ function exportLimitXlsx(){
   t.addEventListener('touchstart',lstart,{passive:true});t.addEventListener('mousedown',lstart);
   document.addEventListener('touchmove',lmove,{passive:false});document.addEventListener('mousemove',lmove);
   document.addEventListener('touchend',lend);document.addEventListener('touchcancel',lend);document.addEventListener('mouseup',lend);
-  t.addEventListener('contextmenu',e=>{if(e.target.closest('.li'))e.preventDefault()});
+  t.addEventListener('contextmenu',e=>{const li=e.target.closest('.li[data-li]');if(!li)return;e.preventDefault();if(e.button===2&&!ldrag&&!modalOpen)openLimitSplit(li.dataset.li)});   /* マウスの右クリック＝分割メニュー（タッチの長押しでは出さない） */
   t.addEventListener('selectstart',e=>{if(e.target.closest&&e.target.closest('.li'))e.preventDefault()});
   t.addEventListener('dragstart',e=>e.preventDefault());
   /* 2本指で広げる・つまむ */
@@ -1806,7 +1808,8 @@ function openSettings(){
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr);if(!L)L=limitFromKanri(rows)}   /* 「リミット表」シートがなければ、管理シートの「生産リミット時間」の列から */
         if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
         else if(limit&&/\.xlsx$/i.test(f.name)){const sd=stdFromRows(rows);if(sd&&Object.keys(sd).length){limit.std=sd;save('limit',limit)}}   /* リミットの時刻がなくても、標準時間は入れ直す */
-        const lmsg=L?'\n進捗管理（タイムリミット表） '+limitCount(L)+' 件も取り込みました':'';
+        const noQ=L&&L.kanri?L.areas[0].cols.flat().filter(i=>i.qty==='').length:0;
+        const lmsg=L?'\n進捗管理（タイムリミット表） '+limitCount(L)+' 件も取り込みました'+(noQ?'\n\n※ '+noQ+' 件は、今月の必要数が読めませんでした（必要数・必要時間は空欄になります）。\nExcelで開いて「上書き保存」したファイルか、今月（'+(new Date().getMonth()+1)+'月）の列があるかを確かめてください':''):'';
         if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
