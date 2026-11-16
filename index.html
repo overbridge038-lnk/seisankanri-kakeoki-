@@ -310,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16e</span>
+    <span class="ver">ver 2026-11-16f</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16e';
+const VER='2026-11-16f';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -470,7 +470,15 @@ function upsert(job){
   if(live()){const ob=outbox();ob[job.id]=job;save('outbox',ob);flush()}
   renderAll();
 }
-async function gas(method,params,body){
+let netErr=null;   /* つながらない理由 {s:短い言葉, l:くわしい説明}。ヘッダーの「オフライン」に出す（見える化） */
+const netWhy=e=>{const m=String(e&&e.message||e||'');
+  if(/no url/.test(m))return{s:'URLなし',l:'Apps Script の URL が入っていません。\n設定で URL を入れてください'};
+  if(/合言葉/.test(m))return{s:'合言葉',l:'合言葉がちがいます。\n設定で、Googleの Code.gs の KEY と同じ合言葉を入れ直してください'};
+  if(/Failed to fetch|NetworkError|Load failed|fetch/i.test(m))return{s:'つながらない',l:'Google（script.google.com）につながりません。\nこの PC のインターネット接続・社内の制限（プロキシなど）を確かめてください。\n別のブラウザや、スマホの回線で開けるかも確かめてください'};
+  if(/JSON|Unexpected|DOCTYPE|token/i.test(m))return{s:'URL・公開',l:'URL の答えが読めません。\nURL がまちがっているか、デプロイの「アクセスできるユーザー」が「全員」になっていない可能性があります'};
+  return{s:'エラー',l:m||'つながりません'}};
+async function gas(method,params,body){try{return await gas0(method,params,body)}catch(e){netErr=netWhy(e);throw e}}
+async function gas0(method,params,body){
   if(onGas){
     const req=body?{body:Object.assign({key:S.key||''},body)}:{params:Object.assign({key:S.key||''},params||{})};
     const j=JSON.parse(await new Promise((ok,ng)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ng).api(req)));
@@ -513,7 +521,7 @@ async function listByDate(date){
   if(!live())return mine();
   try{const j=await gas('GET',{action:'list',date});setNet(true);andonLog=j.jobs.filter(x=>stg(x)===9);return j.jobs.filter(x=>x.t1&&stg(x)>=2&&stg(x)<9)}catch(e){setNet(false);return mine()}
 }
-function setNet(ok){online=ok;renderHeader()}
+function setNet(ok){online=ok;if(ok)netErr=null;renderHeader()}
 window.addEventListener('online',()=>{flush();poll()});
 window.addEventListener('storage',e=>{if(e.key==='sk_'+jobsKey()){loadJobs();renderAll()}if(e.key==='sk_sess'){sess=load('sess',null);renderKake()}});
 
@@ -929,7 +937,7 @@ function renderHeader(){
   const n=Object.keys(outbox()).length;
   const net=$('#hNet');
   if(!live()){net.textContent='この端末のみ';net.className='chip'}
-  else{net.textContent=online?(n?'送信待ち '+n+'件':'通信OK'):'オフライン'+(n?'（未送信 '+n+'件）':'');net.className='chip'+(online&&!n?'':' ng')}
+  else{net.textContent=online?(n?'送信待ち '+n+'件':'通信OK'):'オフライン'+(netErr?'：'+netErr.s:'')+(n?'（未送信 '+n+'件）':'');net.className='chip'+(online&&!n?'':' ng');net.title=online||!netErr?'':netErr.l}
   $('#hMode').style.display=S.mode==='test'?'':'none';
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
 }
@@ -1368,6 +1376,7 @@ function exportLimitXlsx(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((limit.title||'進捗管理（タイムリミット表）').replace(/\s+/g,'_')+'_'+stamp+'.xlsx').replace(/[\\/:*?"<>|]/g,'_');
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
 }
+$('#hNet').onclick=()=>{if(live()&&!online&&netErr)alert('オフラインの理由：\n\n'+netErr.l+'\n\n（この端末の中のデータは、そのまま使えます。つながると自動で送ります）')};
 (()=>{const t=$('#limitBody');
   t.addEventListener('touchstart',lstart,{passive:true});t.addEventListener('mousedown',lstart);
   document.addEventListener('touchmove',lmove,{passive:false});document.addEventListener('mousemove',lmove);
@@ -1592,7 +1601,12 @@ function masterFromRows(rows){
       out.push({cust:mk,name:'',hin:h,pn,kind:'row',sub:pn})});
     return normM(out);
   }
-  return normM(rows.filter(r=>r&&(r[0]||r[1]||r[2])).filter((r,i)=>!(i===0&&/客先/.test(String(r[0])))).map(r=>({cust:r[0]||'',name:r[1]||'',hin:r[2]||''})));
+  /* ひな形（客先・名称・品番背番）：見出しの行があるものだけ読む。見出しがないものは、全部の行に品番が入っているときだけ。
+     ほかの表（時刻表・集計表など）を品番マスタとして読んでしまうと、客先のボタンがこわれる（ポカヨケ） */
+  const body=rows.filter(r=>r&&(r[0]||r[1]||r[2])),hd=body.slice(0,5).findIndex(r=>/客先/.test(String(r[0]||'')));
+  const data=hd>=0?body.slice(hd+1):body;
+  if(hd<0&&!(data.length>=1&&data.every(r=>String(r[2]||'').trim()&&!/^[\d.,\s]+$/.test(String(r[2]))&&String(r[2]).length<=40)))return[];
+  return normM(data.map(r=>({cust:r[0]||'',name:r[1]||'',hin:r[2]||''})));
 }
 async function readTable(f){
   const buf=await f.arrayBuffer();
@@ -1796,6 +1810,8 @@ function openSettings(){
       if(!/^https:\/\/script\.google\.com[\/]/.test(u)){alert('Apps Script URL（https:\/\/script.google.com/…/exec）を入れてください');return}
       if(!k){alert('合言葉を入れてください');return}
       const pm=load('master',null)?master:null;   /* 取り込んだ品番マスタを入れる（仮データは入れない） */
+      const cs=[...new Set((pm||[]).map(x=>x.cust))];
+      if(!confirm('配布用ファイルに入れる中身：\n・品番マスタ '+(pm?pm.length+' 件（客先 '+cs.length+'：'+cs.slice(0,8).join('、')+(cs.length>8?'…':'')+'）':'なし')+'\n・進捗管理（タイムリミット表） '+(limit?limitCount(limit)+' 件':'なし')+'\n\nこの客先で合っていますか？（まちがっていたら、先に正しいExcelを取り込み直してください）'))return;
       const html='<!doctype html>\n'+SRC.replace(/^const PRESET=.*$/m,()=>'const PRESET='+JSON.stringify({gasUrl:u,key:k,master:pm,mv:pm?Date.now():0,limit:limit||null,lv:limit?Date.now():0,delPw:S.delPw==='0000'?'':S.delPw}).replace(/</g,'\\u003c')+';');
       const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='生産管理しくみ_配布用_'+VER+'.html';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)};
     if($('#sDemo'))$('#sDemo').onclick=()=>{
@@ -1816,7 +1832,7 @@ function openSettings(){
         else if(limit&&/\.xlsx$/i.test(f.name)){const sd=stdFromRows(rows);if(sd&&Object.keys(sd).length){limit.std=sd;save('limit',limit)}}   /* リミットの時刻がなくても、標準時間は入れ直す */
         const noQ=L&&L.kanri?L.areas[0].cols.flat().filter(i=>i.qty==='').length:0;
         const lmsg=L?'\n進捗管理（タイムリミット表） '+limitCount(L)+' 件も取り込みました'+(noQ?'\n\n※ '+noQ+' 件は、今月の必要数が読めませんでした（必要数・必要時間は空欄になります）。\nExcelで開いて「上書き保存」したファイルか、今月（'+(new Date().getMonth()+1)+'月）の列があるかを確かめてください':''):'';
-        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('読み取れる行がありません（A 客先・B 名称・C 品番・背番）')}
+        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('品番マスタとして読める表がありません。\n管理シート入りのExcelか、ひな形（A 客先・B 名称・C 品番・背番、1行目は見出し）を入れてください')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
     const dz=$('#sDrop');dz.onclick=()=>$('#sCsv').click();
