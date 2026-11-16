@@ -310,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16d</span>
+    <span class="ver">ver 2026-11-16e</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16d';
+const VER='2026-11-16e';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -701,8 +701,8 @@ function openKakePri(){
 function drawKakePri(){
   const el=$('#pqList');if(!el)return;
   if(!limit){el.innerHTML='<div class="empty">進捗管理（タイムリミット表）がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き管理表のExcel<br>（管理シートの「生産リミット時間」に時刻を入れたもの）を入れてください</div>';return}
-  const q=nh($('#pqIn').value),L=limitState().filter(x=>!x.nop&&(!q||nh(x.it.part).includes(q))).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i),todo=L.filter(x=>!x.isDone),dn=L.filter(x=>x.isDone),day0=new Date();day0.setHours(0,0,0,0);
-  const row=(x,n)=>`<div class="prow${x.isDone?' dn':''}" data-kk="${esc(x.key)}"><span class="no">${x.isDone?'✓':n}</span><span class="h"><span class="ar">${esc(limit.areas[x.ai].area)}</span>${esc(x.it.part)}${x.it.piece?`<span class="pc">${x.it.piece}</span>`:''}${x.it.hand?'<span class="hb">手入力</span>':''}</span><span class="t">${hm0(limit.times[x.ti])}</span>${x.isDone?'<span class="rem">済</span>':`<span class="rem" data-eta="${day0.getTime()+limit.times[x.ti]*60000}"></span>`}<span class="go">›</span></div>`;
+  const q=nh($('#pqIn').value),L=limitState().filter(x=>!x.nop&&(!q||nh(x.it.part).includes(q))).sort((a,b)=>a.ti-b.ti||a.ai-b.ai||a.i-b.i),todo=L.filter(x=>!x.isDone),dn=L.filter(x=>x.isDone),day0=bizDay0();
+  const row=(x,n)=>`<div class="prow${x.isDone?' dn':''}" data-kk="${esc(x.key)}"><span class="no">${x.isDone?'✓':n}</span><span class="h"><span class="ar">${esc(limit.areas[x.ai].area)}</span>${esc(x.it.part)}${x.it.piece?`<span class="pc">${x.it.piece}</span>`:''}${x.it.hand?'<span class="hb">手入力</span>':''}</span><span class="t">${hm0(limit.times[x.ti])}</span>${x.isDone?'<span class="rem">済</span>':`<span class="rem" data-eta="${day0+limit.times[x.ti]*60000}"></span>`}<span class="go">›</span></div>`;
   el.innerHTML=`<div class="prh"><span>No</span><span>品番・背番</span><span>リミット</span><span>のこり時間</span><span></span></div>${todo.length?todo.map((x,i)=>row(x,i+1)).join(''):'<div class="empty">掛けるものは、ありません</div>'}
     ${dn.length?`<h2 style="margin-top:.8rem">掛け済み（${dn.length}件）</h2>${dn.map(x=>row(x)).join('')}`:''}`;
   tick();
@@ -997,10 +997,16 @@ function renderKensa(){
    計画＝Excel「リミット表」シート（エリア×リミット時刻に 品番・必要時間・ハンガー・必要数）。なければ管理シートの「生産リミット時間」の列（limitFromKanri）。
    「済」は自働で付く：今日、同じ品番を検査用段取りへ送信していれば済（同じ品番が何回もあるときは、リミットの早い順に1回ずつ）。
    品番をタップ → 箱数を入れて送信もできる。リミット時刻を過ぎて未完了は赤（見える化・異常を知らせる）。 */
+/* 進捗管理の1日＝6:00〜翌朝5:59。リミット時刻は「6:00からの順」で持つ（0:00〜5:59 は翌日として +24時間。24:00・25:00 と書いてもよい） */
+const LDAY=360,ltNorm=t=>t==null?null:(t<LDAY?t+1440:t);
+const ltParse=v=>{const t=String(v==null?'':v).normalize('NFKC').trim(),m=t.match(/^(\d{1,2})[:：](\d{2})/);if(m)return ltNorm(+m[1]*60+ +m[2]);const f=parseFloat(t);if(!(f>0)||f>=2)return null;return ltNorm(f===1?1440:Math.round((f%1)*1440)%1440)};   /* Excelの時刻（1日＝1）も読む */
+const bizYmd=ms=>ymd(ms-LDAY*60000);   /* 6:00より前は、前の日のぶん */
+const bizNowM=()=>{const d=new Date();return ltNorm(d.getHours()*60+d.getMinutes())};
+const bizDay0=()=>{const d=new Date(Date.now()-LDAY*60000);d.setHours(0,0,0,0);return d.getTime()};
 const limitCount=L=>L?L.areas.reduce((a,x)=>a+x.cols.reduce((b,c)=>b+c.length,0),0):0;
 function limitFromRows(rows){
   const hi=rows.findIndex(r=>r&&/作業エリア/.test(String(r[0]||'')));if(hi<0)return null;
-  const tm=v=>{const t=String(v==null?'':v).trim(),m=t.match(/^(\d{1,2}):(\d{2})/);if(m)return +m[1]*60+ +m[2];const f=parseFloat(t);return f>0&&f<1?Math.round(f*1440):null};
+  const tm=ltParse;
   const cols=[];for(let c=1;c<rows[hi].length;c++){const t=tm(rows[hi][c]);if(t!=null)cols.push({c,t})}
   if(!cols.length)return null;
   const areas=[];let cur=null;
@@ -1022,7 +1028,7 @@ function limitFromKanri(rows){
   const sub=(c0,name)=>{if(c0<0)return -1;for(let c=c0;c<c0+3;c++)if(S[c]===name)return c;return -1};
   const mon=(name)=>{const c0=H.findIndex(c=>c.indexOf(name)>=0),o={};if(c0<0)return o;for(let c=c0;c<c0+3;c++){const m=parseInt(S[c],10);if(m>=1&&m<=12)o[m]=c}return o};
   const cQ=mon('日当り数(箱)・・・素材'),cP=mon('日当り数(個)'),sd=stdFromRows(rows)||{},cHg=sub(H.indexOf('塗装条件'),'ハンガー');
-  const tm1=v=>{const t=String(v).trim(),m=t.match(/^(\d{1,2})[:：](\d{2})/);if(m)return +m[1]*60+ +m[2];const f=parseFloat(t);if(!(f>0))return null;const d=f%1;return d>0?Math.round(d*1440)%1440:null};
+  const tm1=ltParse;
   const items=[];
   rows.slice(hi+2).forEach(r=>{if(!r||!String(r[cMk]||'').trim())return;
     const part=String(r[cM]||'').normalize('NFKC').trim()||String(r[cK]||'').normalize('NFKC').trim();if(!part)return;
@@ -1030,7 +1036,7 @@ function limitFromKanri(rows){
     const qm={},hm={};Object.keys(cQ).forEach(m=>{const x=lnum(r[cQ[m]]);if(x!=null)qm[m]=Math.round(x)});const k=(sd[nh(part)]||{}).k;if(k!=null)Object.keys(cP).forEach(m=>{const x=lnum(r[cP[m]]);if(x!=null)hm[m]=Math.round(x*k/36)/100});
     ts.forEach(t=>items.push({t,part,hanger:cHg>=0?String(r[cHg]||'').replace(/[\s　]+/g,'').trim():'',qm,hm}))});
   if(!items.length)return null;
-  const times=[...new Set(items.map(x=>x.t))].sort((a,b)=>a-b),mo=new Date().getMonth()+1;
+  const times=[...new Set(items.map(x=>x.t))].sort((a,b)=>a-b),mo=new Date(Date.now()-LDAY*60000).getMonth()+1;
   const cols=times.map(t=>items.filter(x=>x.t===t).map(x=>({part:x.part,hours:x.hm[mo]!=null?'('+x.hm[mo]+'h)':'',hanger:x.hanger,qty:x.qm[mo]!=null?x.qm[mo]:'',qm:x.qm,hm:x.hm})));
   return{title:'',times,areas:[{area:'全体',cols}],kanri:true};
 }
@@ -1038,12 +1044,12 @@ function limitFromKanri(rows){
 function limitFromHtml(text){
   const doc=new DOMParser().parseFromString(text,'text/html'),el=doc.getElementById('limit-data');if(!el)return null;
   let d;try{d=JSON.parse(el.textContent)}catch(x){return null}
-  const T=Array.isArray(d&&d.times)?d.times.map(Number):[],lay=Array.isArray(d&&d.layout)?d.layout:[];if(!T.length||!lay.length)return null;
+  const T=Array.isArray(d&&d.times)?d.times.map(x=>ltNorm(Number(x))):[],lay=Array.isArray(d&&d.layout)?d.layout:[];if(!T.length||!lay.length)return null;
   const areas=lay.map(a=>({area:String(a&&a.area||'').trim()||'全体',cols:T.map((t,i)=>((a&&a.cols&&a.cols[i])||[]).map(it=>({part:String(it&&it.part||'').normalize('NFKC').trim(),hours:String(it&&it.hours||'').trim(),hanger:String(it&&it.hanger||'').replace(/[\s\u3000]+/g,'').trim(),qty:Math.round(+(it&&it.qty))||0})).filter(it=>it.part))})).filter(a=>a.cols.some(c=>c.length));
   const L={title:(doc.title||'').replace(/\s*リミット表\s*$/,'').trim(),times:T,areas};
   return limitCount(L)?L:null;
 }
-const hm0=m=>Math.floor(m/60)+':'+pad(m%60);
+const hm0=m=>(m>=1440?'翌'+Math.floor(m/60-24):Math.floor(m/60))+':'+pad(m%60);   /* 24時からあとは「翌1:00」の形で出す */
 /* 「必要数」の文字：Excel「掛け置き管理表データ」シートの左の列にある「…必要数」（例：日あたり必要数）の文字に合わせる。なければ「必要数」 */
 const QL=()=>(limit&&limit.qtyLabel)||'必要数';
 function qtyLabelFrom(rows){for(const r of rows||[])for(let c=0;c<4;c++){const b=String(r&&r[c]||'').trim();if(b&&b.length<=12&&/必要数/.test(b))return b}return null}   /* 左から4列目までの見出し */
@@ -1085,7 +1091,7 @@ const llabel=u=>u.part+(u.piece?'（'+u.piece+'）':'');
 function limitModel(){
   const E=leGet(),T=limit.times,base={},bo=limit.areas.map(()=>T.map(()=>[]));
   limit.areas.forEach((a,ai)=>a.cols.forEach((c,ti)=>{const seen={};c.forEach(it=>{const n=seen[it.part]=(seen[it.part]||0)+1,k=a.area+'|'+T[ti]+'|'+it.part+'|'+(n-1);
-    const mo=new Date().getMonth()+1,hq=it.hm&&it.hm[mo]!=null?it.hm[mo]:null,qq=it.qm?(it.qm[mo]!=null?it.qm[mo]:''):it.qty;   /* 管理シートから作った札は、今月の列の値 */
+    const mo=new Date(Date.now()-LDAY*60000).getMonth()+1,hq=it.hm&&it.hm[mo]!=null?it.hm[mo]:null,qq=it.qm?(it.qm[mo]!=null?it.qm[mo]:''):it.qty;   /* 管理シートから作った札は、今月の列の値 */
     base[k]={key:k,part:it.part,h:hq!=null?hq:parseFloat(String(it.hours).replace(/[^\d.]/g,''))||0,hanger:it.hanger,qty:qq,ai,ti};bo[ai][ti].push(k)})}));
   const ad=E.added||{};Object.keys(ad).forEach(k=>{const a=ad[k];
     if(a&&a.part&&limit.areas[a.ai]&&a.ti>=0&&a.ti<T.length){base[k]={key:k,part:a.part,h:+a.h||0,hanger:a.hanger||'',qty:a.qty===''||a.qty==null?'':+a.qty,hand:true,ai:a.ai,ti:a.ti};bo[a.ai][a.ti].push(k)}});
@@ -1111,11 +1117,11 @@ function leSaveDoc(E){
 function leEdit(fn){
   const m=limitModel(),g=leGet(),E=Object.assign(leArr(),{prev:g.prev,prevAt:g.prevAt,prevHow:g.prevHow,snapDate:g.snapDate});
   const before=JSON.stringify(leArrOf(E));fn(E,m);if(JSON.stringify(leArrOf(E))===before)return;
-  const td=ymd(Date.now());
+  const td=bizYmd(Date.now());
   if(E.snapDate!==td){E.prev=JSON.parse(before);E.prevAt=Date.now();E.prevHow='auto';E.snapDate=td}   /* 今日はじめて変える → 変える前の配置を「前日の配置」に */
   leSaveDoc(E);
 }
-function lePrevInfo(){const g=leGet();return g.prev&&g.snapDate===ymd(Date.now())?{arr:g.prev,at:g.prevAt,how:g.prevHow,real:true}:{arr:leArr(),real:false}}
+function lePrevInfo(){const g=leGet();return g.prev&&g.snapDate===bizYmd(Date.now())?{arr:g.prev,at:g.prevAt,how:g.prevHow,real:true}:{arr:leArr(),real:false}}
 function lePrevLabel(){const pi=lePrevInfo();if(!pi.real)return'前日の配置：今日はまだ配置を変えていません（いまの配置が前日の配置です）';
   const d=new Date(pi.at);return '前日の配置：'+(pi.how==='manual'?'手で保存':'自動で保存')+'　'+(d.getMonth()+1)+'/'+d.getDate()+' '+hm(pi.at)}
 function openLimitPrev(){
@@ -1136,7 +1142,7 @@ function openLimitSavePrev(){
     <div style="margin-top:.5rem;font-size:1.1rem;line-height:1.6">月の途中で配置が変わったときに、変えたあとの配置をここで保存しておくと、あとで「前日の配置に戻す」でその配置に戻せます。<br>前の「前日の配置」は上書きされます。</div>
     <div class="foot"><button class="btn ghost" data-close>やめる</button><button class="btn ok" id="lsOk">保存する</button></div>`,()=>{
     $('#lsOk').onclick=()=>{closeModal();const old=lclone(leGet()),A=leArr();
-      leSaveDoc(Object.assign({},A,{prev:lclone(A),prevAt:Date.now(),prevHow:'manual',snapDate:ymd(Date.now())}));
+      leSaveDoc(Object.assign({},A,{prev:lclone(A),prevAt:Date.now(),prevHow:'manual',snapDate:bizYmd(Date.now())}));
       toast('今の配置を「前日の配置」として保存しました',()=>leSaveDoc(old))};
   });
 }
@@ -1151,8 +1157,8 @@ function leReset(){leEdit(E=>{E.order=E.order.map(c=>c.map(()=>[]));E.removed=[]
 const boxesOf=j=>+(j.qty??j.n)||0;
 function limitState(){
   if(!limit)return[];
-  const m=limitModel(),td=ymd(Date.now()),nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),q={};
-  Object.values(jobs).filter(j=>j.t1&&!j.only&&!isEx(j)&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));   /* 突発は数えない */
+  const m=limitModel(),td=bizYmd(Date.now()),nowM=bizNowM(),q={};
+  Object.values(jobs).filter(j=>j.t1&&!j.only&&!isEx(j)&&j.st!=='cancel'&&stg(j)>=2&&stg(j)<9&&bizYmd(j.t1)===td).sort((a,b)=>a.t1-b.t1).forEach(j=>(q[nh(j.hin)]=q[nh(j.hin)]||[]).push(j));   /* 突発は数えない */
   const L=[];m.order.forEach((cols,ai)=>cols.forEach((list,ti)=>list.forEach((k,i)=>L.push({ai,ti,i,key:k,it:m.units[k]}))));
   const by={};L.slice().sort((x,y)=>x.ti-y.ti||x.ai-y.ai||x.i-y.i).forEach(x=>{(by[nh(x.it.part)]=by[nh(x.it.part)]||[]).push(x)});
   /* 済＝その品番を検査用段取りへ1回送ったら、リミットの早い札から1つずつ済にする（必要数に届かなくてもよい。2回仕掛けは札を2つに分けておく） */
@@ -1166,7 +1172,7 @@ function renderLimit(){
   const b=$('#limitBody');if(!b||(ldrag&&ldrag.on))return;
   if(!limit){b.innerHTML='<div class="empty">進捗管理（タイムリミット表）がまだ入っていません。<br>設定 → 品番マスタの枠に、掛け置き管理表のExcel<br>（管理シートの「生産リミット時間」に時刻を入れたもの）を入れてください</div>';return}
   const L=limitState(),m=L.model,need=L.filter(x=>!x.nop||x.isDone),done=need.filter(x=>x.isDone),late=L.filter(x=>x.late);
-  const nd=new Date(),nowM=nd.getHours()*60+nd.getMinutes(),pc=need.length?Math.round(done.length/need.length*100):0;
+  const nowM=bizNowM(),pc=need.length?Math.round(done.length/need.length*100):0;
   const nx=limit.times.findIndex(t=>t>=nowM);
   const ach=limit.areas.map((a,ai)=>{const n=need.filter(x=>x.ai===ai),d=n.filter(x=>x.isDone).length,lt=late.filter(x=>x.ai===ai).length;
     return `<span class="${n.length&&d===n.length?'all':lt?'late':''}">${esc(a.area)} ${d}/${n.length}${lt?'　遅れ'+lt:''}</span>`}).join('');
