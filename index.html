@@ -184,16 +184,22 @@ main.four .now .hin{font-size:1.5rem}main.four .now .count b{font-size:3.2rem}
 .rbtn{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.7rem}.rbtn .btn{min-height:4.2rem;font-size:1.3rem;line-height:1.2}.rbtn small{display:block;font-size:.9rem;font-weight:700;opacity:.9}
 .short{text-wrap:balance;margin-top:.7rem;padding:.5rem .8rem;border-radius:.7rem;background:var(--bad-bg);color:var(--bad);font-weight:800;font-size:1.05rem}.short b{font-size:1.4rem}
 .hand{margin-top:.7rem;border:2px solid #dc2626;border-radius:.8rem;padding:.7rem;background:#fef2f2}
-.reg{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:stretch}
+.reg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.6rem;align-items:stretch}
 .reg .tp,.reg .rb{border:2px solid var(--line);border-radius:.9rem;padding:.4rem .5rem;display:flex;align-items:center;justify-content:center;gap:.35rem;flex-wrap:wrap}
 .reg .tp>span,.reg .rb>span{width:100%;text-align:center;font-weight:800;color:#334155}
 .reg .tp b{font-size:2rem}.reg .tp .btn{min-height:3rem;padding:0 .7rem;font-size:1.05rem}
+/* 開始と終了の枠は同じ並び（上：見出し／中：時・：・分／下：今）。幅がせまくても折り返さず、2つの枠がそろう */
+.reg .tp{display:grid;grid-template-columns:auto auto auto;justify-content:center;align-items:center;column-gap:.3rem;row-gap:.4rem}
+.reg .tp>span{grid-column:1/4}.reg .tp .btn{grid-column:1/4;justify-self:center}
+@media (max-width:520px){.reg .tp .wh{width:3.5rem}.reg .tp b{font-size:1.6rem}}
 .wh{height:7.2rem;width:4.4rem;overflow-y:auto;scroll-snap-type:y mandatory;border:2px solid #0f766e;border-radius:.6rem;scrollbar-width:none;
   background:linear-gradient(transparent 2.3rem,#ccfbf1 2.3rem,#ccfbf1 4.9rem,transparent 4.9rem)}
 .wh::-webkit-scrollbar{display:none}
 .wi{height:2.4rem;line-height:2.4rem;text-align:center;font-size:1.5rem;font-weight:800;color:#94a3b8;scroll-snap-align:center;cursor:pointer}
 .wi.on{color:#0f172a;font-size:1.9rem;font-weight:900}
 .reg .rb .fx{width:100%}
+@media (max-width:340px){.reg .tp .wh{width:3rem}.reg .tp b{font-size:1.3rem}.reg .tp{column-gap:.15rem}.reg .rb .fx{grid-template-columns:2.2rem minmax(0,1fr) 2.2rem}}
+@media (max-width:520px){.reg .rb>span{font-size:.85rem}.reg .rb .fx .btn{min-width:0;width:100%}.reg .rb .fx{grid-template-columns:2.6rem minmax(0,1fr) 2.6rem;gap:.3rem}.reg .rb .fx .btn{padding:0;font-size:1.2rem}.reg .rb .fx input{min-width:0;font-size:1.5rem}}
 #iReg{min-height:auto;font-size:1.8rem}
 .fix{margin-top:1rem;border-top:2px solid var(--line);padding-top:.8rem}
 .rs{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:.5rem 0}.rs button{min-height:3.4rem;font-size:1.05rem;font-weight:800;border:2px solid var(--line);background:#fff;border-radius:.7rem;cursor:pointer}
@@ -310,7 +316,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16g</span>
+    <span class="ver">ver 2026-11-16h</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +357,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16g';
+const VER='2026-11-16h';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -734,7 +740,7 @@ function drawKake(){
     <div class="reg" style="margin-top:.6rem">
       <div class="tp"><span>掛け開始</span><div class="wh" data-k="sH"></div><b>:</b><div class="wh" data-k="sM"></div><button class="btn ghost" data-now="s">今</button></div>
       <div class="tp"><span>掛け終了</span><div class="wh" data-k="eH"></div><b>:</b><div class="wh" data-k="eM"></div><button class="btn ghost" data-now="e">今</button></div>
-      <div class="rb"><span>作業した箱数（かんばん枚数）</span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="kBx" type="number" min="1" step="1" inputmode="numeric" value="${esc(kd.bx)}"><button class="btn ghost" data-bx="1">+1</button></div></div>
+      <div class="rb"><span><i style="font-style:normal;display:inline-block">作業した箱数</i><i style="font-style:normal;display:inline-block">（かんばん枚数）</i></span><div class="fx"><button class="btn ghost" data-bx="-1">−1</button><input id="kBx" type="number" min="1" step="1" inputmode="numeric" value="${esc(kd.bx)}"><button class="btn ghost" data-bx="1">+1</button></div></div>
       <button class="btn ${kd.ex?'red':'insp'}" id="kReg">${btn}</button>
     </div>
     <div class="foot"><button class="btn ghost" data-close>${kd.ex?'やめる':'もどる'}</button></div>`;
