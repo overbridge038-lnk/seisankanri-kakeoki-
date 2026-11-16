@@ -253,8 +253,8 @@ main.split.four.vs{grid-template-columns:1fr;grid-auto-rows:auto;overflow-y:auto
 #lzbox{overflow:hidden}table.lt{transform-origin:0 0}table.lt.zm{min-width:0}.lt.zm td.ar{position:static}
 .lzoom{display:inline-flex;align-items:center;gap:.3rem;margin-left:auto}.lzoom button{min-width:2.8rem;font-size:1.2rem;font-weight:900}.lzoom span{min-width:3.2rem;text-align:center;font-weight:800}
 table.lt{width:auto;min-width:100%;font-size:.95rem}.lt th{position:sticky;top:0;background:#e2e8f0;text-align:center;white-space:nowrap;z-index:1}.lt th.now{background:#fde68a}
-.lt td{vertical-align:top;padding:.25rem;min-width:7.2rem}.lt td.ar{min-width:3rem;font-weight:900;font-size:1.2rem;text-align:center;background:#f1f5f9;position:sticky;left:0}
-.li{display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:.5rem;background:#fff;padding:.25rem .45rem;margin-bottom:.25rem;cursor:pointer;font-weight:900;font-size:1.05rem;line-height:1.25}
+.lt td{vertical-align:top;padding:.25rem;min-width:7.2rem}.lt td.ar{min-width:3rem;font-weight:900;font-size:1.2rem;text-align:center;background:#f1f5f9;position:sticky;left:0;white-space:nowrap}
+.li{display:block;width:100%;text-align:left;border:2px solid var(--line);border-radius:.5rem;background:#fff;padding:.25rem .45rem;margin-bottom:.25rem;cursor:pointer;font-weight:900;font-size:1.05rem;line-height:1.25;white-space:nowrap}
 .li small{display:block;font-weight:600;font-size:.75rem;color:var(--mut);overflow-wrap:anywhere}.li small.bxs{color:#475569}.nw{white-space:nowrap}
 .li.hand{background:#e8f0fe;border-color:#1a73e8;color:#1a4fa0}.li.hand small{color:#3b5fa8}
 .li.done{background:var(--kensa-bg);border-color:var(--kensa);color:#14532d}.li.done small{color:#166534}
@@ -310,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16a</span>
+    <span class="ver">ver 2026-11-16b</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16a';
+const VER='2026-11-16b';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1031,6 +1031,15 @@ function limitFromKanri(rows){
   const cols=times.map(t=>items.filter(x=>x.t===t).map(x=>({part:x.part,hours:x.hm[mo]!=null?'('+x.hm[mo]+'h)':'',hanger:x.hanger,qty:x.qm[mo]!=null?x.qm[mo]:0,qm:x.qm,hm:x.hm})));
   return{title:'',times,areas:[{area:'全体',cols}],kanri:true};
 }
+/* リミット表のHTML（中に <script type="application/json" id="limit-data"> の計画が入っているもの）から作る。品番マスタは変えない */
+function limitFromHtml(text){
+  const doc=new DOMParser().parseFromString(text,'text/html'),el=doc.getElementById('limit-data');if(!el)return null;
+  let d;try{d=JSON.parse(el.textContent)}catch(x){return null}
+  const T=Array.isArray(d&&d.times)?d.times.map(Number):[],lay=Array.isArray(d&&d.layout)?d.layout:[];if(!T.length||!lay.length)return null;
+  const areas=lay.map(a=>({area:String(a&&a.area||'').trim()||'全体',cols:T.map((t,i)=>((a&&a.cols&&a.cols[i])||[]).map(it=>({part:String(it&&it.part||'').normalize('NFKC').trim(),hours:String(it&&it.hours||'').trim(),hanger:String(it&&it.hanger||'').replace(/[\s\u3000]+/g,'').trim(),qty:Math.round(+(it&&it.qty))||0})).filter(it=>it.part))})).filter(a=>a.cols.some(c=>c.length));
+  const L={title:(doc.title||'').replace(/\s*リミット表\s*$/,'').trim(),times:T,areas};
+  return limitCount(L)?L:null;
+}
 const hm0=m=>Math.floor(m/60)+':'+pad(m%60);
 /* 「必要数」の文字：Excel「掛け置き管理表データ」シートの左の列にある「…必要数」（例：日あたり必要数）の文字に合わせる。なければ「必要数」 */
 const QL=()=>(limit&&limit.qtyLabel)||'必要数';
@@ -1043,10 +1052,10 @@ function stdFromRows(rows){
   const col=(c0,name)=>{if(c0<0)return -1;for(let c=c0;c<c0+3;c++)if(S[c]===name)return c;return -1};
   const cSo=col(H.indexOf('素材'),'収容数'),cKa=col(H.indexOf('塗完品'),'収容数');
   let g=-1;for(let r=Math.max(0,hi-3);r<=hi&&g<0;r++){const x=(rows[r]||[]).findIndex(c=>/基準時間/.test(String(c)));if(x>=0)g=x}
-  const cSt=g>=0?S.indexOf('基準',g):-1,cIn=g>=0?S.indexOf('検査',g):-1,cMk=H.indexOf('メーカー'),cM=H.indexOf('材料'),cK=H.indexOf('完成'),out={};
+  const cSt=g>=0?S.indexOf('基準',g):-1,cIn=g>=0?S.indexOf('検査',g):-1,cMk=H.indexOf('メーカー'),cM=H.indexOf('材料'),cK=H.indexOf('完成'),cP=H.indexOf('品番'),out={};
   rows.slice(hi+2).forEach(r=>{if(!r||!String(r[cMk]||'').trim())return;
     const v={k:lnum(r[cSt]),qk:lnum(r[cSo]),i:lnum(r[cIn]),qi:lnum(r[cKa])};
-    [r[cM],r[cK]].forEach(x=>{const k=nh(x);if(k&&!out[k])out[k]=v})});
+    [r[cM],r[cK],cP>=0?r[cP]:''].forEach(x=>{const k=nh(x);if(k&&!out[k])out[k]=v})});   /* 材料・完成・品番のどれでも引ける */
   return out;
 }
 const stdOf=part=>{const m=limit&&limit.std;return m&&m[nh(part)]||null};
@@ -1737,7 +1746,7 @@ function openSettings(){
   <div class="f"><label>到着予定（完了＋分）</label><input id="sEta" type="number" min="1" value="${S.etaMin}"></div>
   <div class="f"><label>押し忘れ警告（分）</label><input id="sIdle" type="number" min="1" value="${S.idleMin}"></div>
   <div class="f"><label>文字の大きさ</label><select id="sScale">${[100,120,150,180].map(v=>`<option value="${v}" ${S.scale==v?'selected':''}>${v}%${v>=150?'（大型モニター向け）':''}</option>`).join('')}</select></div>
-  <div class="f"><label>品番マスタ</label><div><button class="btn sm" id="sTpl">ひな形（Excel）をつくる</button><input type="file" id="sCsv" accept=".xlsx,.csv,.txt" style="display:none">
+  <div class="f"><label>品番マスタ</label><div><button class="btn sm" id="sTpl">ひな形（Excel）をつくる</button><input type="file" id="sCsv" accept=".xlsx,.csv,.txt,.html,.htm" style="display:none">
     <div id="sDrop" class="drop"><b>ここにExcelをドラッグ＆ドロップ</b><small>（タッチして選ぶこともできます）</small></div>
     <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel<br>（「生産リミット時間」の列に時刻があれば、<br>進捗管理（タイムリミット表）も取り込みます${limit?'。今 '+limitCount(limit)+' 件':''}）</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button></div></div>
   <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉、<br>品番マスタ（今の ${master.length} 件）${limit?'・進捗管理（タイムリミット表）（'+limitCount(limit)+' 件）':''}が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
@@ -1783,7 +1792,13 @@ function openSettings(){
       const html='<!doctype html>\n'+SRC.replace(/^const PRESET=.*$/m,()=>'const PRESET='+JSON.stringify({gasUrl:'',key:'',master:pm,mv:pm?Date.now():0,limit:limit||null,lv:limit?Date.now():0,delPw:'',demo:true}).replace(/</g,'\\u003c')+';');
       const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='生産管理しくみ_デモ用_'+VER+'.html';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)};
     const importMaster=async f=>{if(!f)return;
-      try{const rows=await readTable(f);const m=masterFromRows(rows);
+      try{
+        if(/\.html?$/i.test(f.name)||/^\s*<(!doctype|html)/i.test(await f.slice(0,200).text())){   /* HTMLは品番マスタとして読まない（読むと品番ボタンがこわれる） */
+          const L=limitFromHtml(await f.text());
+          if(!L){alert('このHTMLには、進捗管理（タイムリミット表）のデータが入っていません。\n品番マスタは、Excel（.xlsx）か CSV で入れてください');return}
+          L.qtyLabel=(limit&&limit.qtyLabel)||'必要数';L.std=(limit&&limit.std)||{};limit=L;save('limit',limit);save('limitV',Date.now());
+          alert('進捗管理（タイムリミット表） '+limitCount(L)+' 件を取り込みました（品番マスタはそのままです）');return}
+        const rows=await readTable(f);const m=masterFromRows(rows);
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr);if(!L)L=limitFromKanri(rows)}   /* 「リミット表」シートがなければ、管理シートの「生産リミット時間」の列から */
         if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
         else if(limit&&/\.xlsx$/i.test(f.name)){const sd=stdFromRows(rows);if(sd&&Object.keys(sd).length){limit.std=sd;save('limit',limit)}}   /* リミットの時刻がなくても、標準時間は入れ直す */
