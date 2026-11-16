@@ -310,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16b</span>
+    <span class="ver">ver 2026-11-16c</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16b';
+const VER='2026-11-16c';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -393,6 +393,9 @@ if(S.sn&&S.sn[0]==='段取り①')S.sn[0]=DEFSN[0];
 if(S.sn&&S.sn[2]==='段取り②')S.sn[2]=DEFSN[2];
 if(S.role==='kake')S.role='dan1';
 let master=normM(load('master',DEFAULT_MASTER));
+/* ポカヨケ：HTMLなどを品番マスタとして読んでこわれた品番（< > { } ; = が入る）が3件以上あれば、こわれたマスタとして消し、入れ直しを知らせる */
+const mJunk=x=>/[<>{};=]/.test(x.cust+x.hin+x.name);
+let masterBroken=false;if(load('master',null)&&master.filter(mJunk).length>=3){masterBroken=true;master=normM(DEFAULT_MASTER);try{localStorage.removeItem('sk_master');localStorage.removeItem('sk_masterV')}catch(e){}}
 if(PRESET.master&&PRESET.master.length&&PRESET.mv>load('masterV',0)){master=normM(PRESET.master);save('master',master);save('masterV',PRESET.mv)}   /* 配布用ファイルの品番マスタが、この端末のものより新しければ使う */
 /* リミット表（計画）：{title,times:[分],areas:[{area,cols:[[{part,hours,hanger,qty}]]}]}。Excelの「リミット表」シートから取り込む。配布用ファイルにも入る */
 let limit=load('limit',null);
@@ -1798,7 +1801,8 @@ function openSettings(){
           if(!L){alert('このHTMLには、進捗管理（タイムリミット表）のデータが入っていません。\n品番マスタは、Excel（.xlsx）か CSV で入れてください');return}
           L.qtyLabel=(limit&&limit.qtyLabel)||'必要数';L.std=(limit&&limit.std)||{};limit=L;save('limit',limit);save('limitV',Date.now());
           alert('進捗管理（タイムリミット表） '+limitCount(L)+' 件を取り込みました（品番マスタはそのままです）');return}
-        const rows=await readTable(f);const m=masterFromRows(rows);
+        const rows=await readTable(f);const m0=masterFromRows(rows),m=m0.filter(x=>!mJunk(x));
+        if(m0.length-m.length>=3){alert('品番マスタとして読めない形のファイルです（中身がプログラムの文字になっています）。\n品番マスタは、管理シートのExcel（.xlsx）か CSV で入れてください');return}
         let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr);if(!L)L=limitFromKanri(rows)}   /* 「リミット表」シートがなければ、管理シートの「生産リミット時間」の列から */
         if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
         else if(limit&&/\.xlsx$/i.test(f.name)){const sd=stdFromRows(rows);if(sd&&Object.keys(sd).length){limit.std=sd;save('limit',limit)}}   /* リミットの時刻がなくても、標準時間は入れ直す */
@@ -1933,6 +1937,7 @@ $('#btnFull').onclick=()=>{try{document.fullscreenElement?document.exitFullscree
 /* ====== 起動 ====== */
 loadJobs();layout();renderAll();tick();renderHist();window.__appOk=true;
 if(live()){flush();poll();fetchMaster().then(ok=>{if(ok)renderAll()})}   /* 品番マスタを読んだら客先のボタンを描き直す */
+if(masterBroken)setTimeout(()=>alert('品番マスタがこわれていたので、消しました（いまは仮データです）。\n設定 → 品番マスタの枠に、管理シートのExcelを入れ直してください'),600);
 if(live()&&(firstRun||!S.key))setTimeout(openSettings,500);   /* 初めて開いたタブレット（配布用ファイル・Google）：タブレット名・役割（・合言葉）を入れてもらう */
 </script>
 </body>
