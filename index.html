@@ -310,7 +310,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16f</span>
+    <span class="ver">ver 2026-11-16g</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -351,7 +351,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16f';
+const VER='2026-11-16g';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -1376,7 +1376,7 @@ function exportLimitXlsx(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((limit.title||'進捗管理（タイムリミット表）').replace(/\s+/g,'_')+'_'+stamp+'.xlsx').replace(/[\\/:*?"<>|]/g,'_');
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
 }
-$('#hNet').onclick=()=>{if(live()&&!online&&netErr)alert('オフラインの理由：\n\n'+netErr.l+'\n\n（この端末の中のデータは、そのまま使えます。つながると自動で送ります）')};
+$('#hNet').onclick=()=>{if(live()&&!online&&netErr)alert('オフラインの理由：\n\n'+netErr.l+'\n\n「設定」の「通信テスト」を押すと、どこで止まっているか調べます。\n（この端末の中のデータは、そのまま使えます。つながると自動で送ります）')};
 (()=>{const t=$('#limitBody');
   t.addEventListener('touchstart',lstart,{passive:true});t.addEventListener('mousedown',lstart);
   document.addEventListener('touchmove',lmove,{passive:false});document.addEventListener('mousemove',lmove);
@@ -1773,7 +1773,7 @@ function openSettings(){
   <div class="f"><label>文字の大きさ</label><select id="sScale">${[100,120,150,180].map(v=>`<option value="${v}" ${S.scale==v?'selected':''}>${v}%${v>=150?'（大型モニター向け）':''}</option>`).join('')}</select></div>
   <div class="f"><label>品番マスタ</label><div><button class="btn sm" id="sTpl">ひな形（Excel）をつくる</button><input type="file" id="sCsv" accept=".xlsx,.csv,.txt,.html,.htm" style="display:none">
     <div id="sDrop" class="drop"><b>ここにExcelをドラッグ＆ドロップ</b><small>（タッチして選ぶこともできます）</small></div>
-    <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel<br>（「生産リミット時間」の列に時刻があれば、<br>進捗管理（タイムリミット表）も取り込みます${limit?'。今 '+limitCount(limit)+' 件':''}）</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button></div></div>
+    <div class="dnote">現在 ${master.length} 件${load('master',null)?'':'（仮データ）'}<br>ひな形（客先・名称・品番背番）または<br>掛け置きの「管理シート」入りのExcel<br>（「生産リミット時間」の列に時刻があれば、<br>進捗管理（タイムリミット表）も取り込みます${limit?'。今 '+limitCount(limit)+' 件':''}）</div><button class="btn sm" id="sGetM" style="margin-top:.4rem">Googleから取得</button> <button class="btn sm" id="sNetTest" style="margin-top:.4rem">通信テスト</button></div></div>
   <div class="f"><label>配布用ファイル</label><div><button class="btn sm" id="sDist">配布用ファイルをつくる</button><div class="dnote">上の Apps Script URL と合言葉、<br>品番マスタ（今の ${master.length} 件）${limit?'・進捗管理（タイムリミット表）（'+limitCount(limit)+' 件）':''}が入ったHTMLができます。<br>各タブレットに入れて開くだけで本番になります（社外に出さない）</div></div></div>
   ${PRESET.demo?'':`<div class="f"><label>デモ用ファイル</label><div><button class="btn sm" id="sDemo">デモ用ファイルをつくる</button><div class="dnote">プレゼンで触ってもらう用です。<br>品番マスタ・進捗管理表は入りますが、<br>Apps Script URL・合言葉・パスワードは入りません<br>（Googleにはつながらず、触った内容はその人の端末にだけ残る）</div></div></div>`}
   <div class="f"><label>削除のパスワード</label><div><button class="btn sm" id="sPw">パスワードを変える</button><div class="dnote">実績のデータを削除するとき・前の日までの残りを消すときに使います<br>（はじめは 0000。配布用ファイルにも入ります）</div></div></div>
@@ -1788,6 +1788,16 @@ function openSettings(){
       save('settings',S);loadJobs();histClear();closeModal();layout();renderAll();if(live()){flush();poll();fetchMaster().then(()=>renderAll())}
     };
     $('#sClr').onclick=()=>{if(confirm('テストの記録を全部消します。よいですか？')){save('jobs_test',{});sess=null;save('sess',null);loadJobs();histClear();closeModal();renderAll()}};
+    $('#sNetTest').onclick=async()=>{S.gasUrl=$('#sUrl').value.trim()||S.gasUrl;S.key=$('#sKey').value||S.key;const u=(S.gasUrl||'').trim(),b=$('#sNetTest');b.textContent='調べています…';
+      const L=['開いている場所：'+location.protocol+'\/\/'+(location.host||'（この PC のファイル）'),'ブラウザのネット：'+(navigator.onLine?'つながっている':'つながっていない（ネットが切れています）')];let dx='';
+      if(!/^https:\/\/script\.google\.com[\/]/.test(u)){L.push('Apps Script の URL：入っていない／形がちがう');dx='設定に、Apps Script の URL（https:\/\/script.google.com/…/exec）を入れてください'}
+      else{let A=false,ea='';try{await fetch(u+(u.indexOf('?')<0?'?':'&')+'_='+Date.now(),{mode:'no-cors',cache:'no-store'});A=true}catch(e){ea=String(e&&e.message||e)}
+        L.push('① Googleの URL に届くか：'+(A?'届く':'届かない（'+ea+'）'));
+        if(!A)dx='この PC から Google の URL に届いていません。セキュリティソフト・社内のプロキシ（通信の制限）が止めている可能性があります。\n情報システムの担当に「script.google.com と script.googleusercontent.com への通信を許可」してもらってください';
+        else{let B='';try{await gas('GET',{action:'master'});B='ok';setNet(true)}catch(e){B=(netErr&&netErr.s)||'エラー'}
+          L.push('② 答えを受け取れるか：'+(B==='ok'?'受け取れた':'受け取れない（'+B+'）'));
+          dx=B==='ok'?'つながりました。ヘッダーが「通信OK」になります':B==='合言葉'?'合言葉がちがいます。Code.gs の KEY と同じ合言葉を入れ直してください':'URL には届くのに、答えを受け取れません。\n・デプロイの「アクセスできるユーザー」が「全員」か（Googleの画面で確認）\n・ブラウザが、サーバー上のファイルからの通信を止めていないか（Chrome でも試す）\n・この PC のブラウザが、別の Google アカウントでログインしていないか（シークレットウィンドウで試す）'}}
+      b.textContent='通信テスト';alert('通信テストの結果\n\n'+L.join('\n')+'\n\n'+dx)};
     $('#sGetM').onclick=async()=>{S.gasUrl=$('#sUrl').value.trim();S.key=$('#sKey').value;$('#sGetM').textContent=(await fetchMaster())?'取得しました（'+master.length+'件）':'取得できませんでした'};
     $('#sTpl').onclick=()=>downloadMasterTpl();
     $('#sOld').onclick=()=>{const td=ymd(Date.now()),L=oldLeft(td);
