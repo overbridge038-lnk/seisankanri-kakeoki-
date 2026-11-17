@@ -319,7 +319,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-17b</span>
+    <span class="ver">ver 2026-11-17c</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -361,7 +361,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-17b';
+const VER='2026-11-17c';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -2080,5 +2080,6 @@ if(live()){flush();poll();fetchMaster().then(ok=>{if(ok)renderAll()})}   /* 品�
 if(masterBroken)setTimeout(()=>alert('品番マスタがこわれていたので、消しました（いまは仮データです）。\n設定 → 品番マスタの枠に、管理シートのExcelを入れ直してください'),600);
 if(live()&&(firstRun||!S.key))setTimeout(openSettings,500);   /* 初めて開いたタブレット（配布用ファイル・Google）：タブレット名・役割（・合言葉）を入れてもらう */
 </script>
+<script>/* オフライン保存（Wi-Fiがあれば最新版、なければ最後に開いた版で動く） */if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(function(){});</script>
 </body>
 </html>
