@@ -20,7 +20,7 @@
 - データ置き場は差し替えできる作りを保つ（今は Google。インターネット不可なら PCサーバー＋Googleドライブ同期へ）
 - 変更は必要なところだけ最小限に。直したらテストモード（設定→動かし方）で動作確認してから報告
 
-## 入れてはいけないもの（リポジトリは Private）
+## 入れてはいけないもの（リポジトリは Public。2026-11-17 に Private から変更し、GitHub Pages で公開：https://overbridge038-lnk.github.io/seisankanri-kakeoki-/ 。出荷業務ツール集の表紙 gyomu-network からつないでいる）
 - 品番マスタのExcel（客先名・品番）
 - 本番の合言葉（Code.gs の `KEY` は仮の文字のまま。本番はGoogleの画面で書き換える）
 
