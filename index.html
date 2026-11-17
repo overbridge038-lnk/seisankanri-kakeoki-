@@ -121,6 +121,9 @@ input,select{font-size:1.05rem;padding:.5rem .7rem;border:2px solid var(--line);
 .pick button small{display:block;color:var(--mut);font-weight:600}
 #toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:#0f172a;color:#fff;padding:.8rem 1.2rem;border-radius:.9rem;display:none;gap:1rem;align-items:center;z-index:70;font-weight:700;font-size:1.05rem}
 #toast.on{display:flex}
+#verBar{position:fixed;left:50%;bottom:4.6rem;transform:translateX(-50%);display:none;align-items:center;gap:1rem;background:#b93a09;color:#fff;padding:.8rem 1.2rem;border-radius:.9rem;z-index:80;max-width:94vw;box-shadow:0 .4rem 1.2rem rgba(0,0,0,.35)}
+#verBar .vt{display:flex;flex-direction:column;gap:.15rem;font-size:1.05rem}#verBar #verSub{font-size:.85rem;font-weight:600}
+#verBar .btn{background:#fff;color:#b93a09;min-height:2.8rem;padding:0 1rem;font-weight:900;white-space:nowrap}
 #modal.on~#toast{top:.6rem;bottom:auto}   /* 検査の画面などを開いているあいだのお知らせは上に出す（下のボタンにかぶらない） */
 #toast{width:max-content;max-width:calc(100% - 2rem)}#toastMsg{text-wrap:balance}
 #alarm{position:fixed;inset:0;background:rgba(185,28,28,.94);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;z-index:80;text-align:center;padding:1rem;animation:bl 1s infinite}
@@ -316,7 +319,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-17a</span>
+    <span class="ver">ver 2026-11-17b</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -350,6 +353,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <div id="modal"><div class="dlg" id="dlg"></div></div>
 <div id="lghost"></div><div id="ltrash">🗑<span>ここで離すと外す（生産がないとき）</span></div>
 <div id="toast"><span id="toastMsg"></span></div>
+<div id="verBar"><div class="vt"><b id="verTx"></b><span id="verSub"></span></div><button class="btn" id="verGo">今すぐ更新</button></div>
 <div id="andon"><h2>呼び出し</h2><div class="anl" id="anList"></div></div>
 <div id="start"><div>画面をタッチして開始<div style="font-size:1.1rem;font-weight:600;margin-top:.8rem">（呼び出しの音を鳴らすために必要です）</div></div></div>
 <div id="alarm"><h2>完了ボタンを押し忘れていませんか？</h2><p id="alarmMsg"></p><div class="row"><button class="btn fin" id="alarmFin">完了へ進む</button><button class="btn ghost" id="alarmSnooze">あとで（5分）</button></div></div>
@@ -357,7 +361,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-17a';
+const VER='2026-11-17b';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -514,11 +518,11 @@ async function poll(){
     const j=await gas('GET',{action:'list'});const ob=outbox();let ch=false;const shr=[];
     for(const x of j.jobs){if(stg(x)===12){shr.push(x);continue}if(ob[x.id])continue;const c=jobs[x.id];if(!c||x.u>c.u){jobs[x.id]=x;jshadow[x.id]=JSON.stringify(x);ch=true}}
     if(ch){saveJobs();renderAll()}setNet(true);
-    shApply(shr).catch(()=>{});
+    shApply(shr).catch(()=>{});verCheck(shr);
   }catch(e){setNet(false)}
 }
 async function fetchMaster(){
-  try{const r=await gas('GET',{action:'list'});await shApply(r.jobs.filter(x=>stg(x)===12))}catch(e){}
+  try{const r=await gas('GET',{action:'list'}),sr=r.jobs.filter(x=>stg(x)===12);await shApply(sr);verCheck(sr)}catch(e){}
   if(load('shV_master',0))return true;   /* 共有データがあるときは、そちらを使う */
   try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());d1Built=false;return true}}catch(e){}
   return false;
@@ -575,6 +579,46 @@ async function shShare(m,l){   /* 取り込んだあとに、全端末へ共有�
   const r=[];if(m)r.push(await shPush('master'));if(l)r.push(await shPush('limit'));
   return r.every(Boolean)?'\n\n全部のタブレットに共有しました（ほかの端末には、数秒で反映されます）':'\n\n※ 全部のタブレットへの共有ができませんでした。通信がもどると、自動でやりなおします';
 }
+/* ===== 新しい版のお知らせ（自動更新） =====
+   新しい版を開いた端末が、自分の ver を stage 12 の記録（id=SH-ver#0）に書く。ほかの端末は、数秒ごとの通信でそれを見つけて、
+   「新しい版があります」を出し、入力中でなければ、自動で開きなおす（更新する）。
+   ファイルがまだ古いままのとき（ドライブの同期待ちなど）に、開きなおしをくりかえさないよう、自動は1分に1回・5回まで */
+let verSv='',verTimer=null,verAt=0,verPushAt=0;
+async function verPush(){
+  if(Date.now()-verPushAt<60000)return;verPushAt=Date.now();
+  try{await gas('POST',null,{action:'upsert',jobs:[{id:'SH-ver#0',tab:S.name,hin:'共有データ（ver）',sei:'',maker:'',qty:null,n:0,nq:0,ins:0,t0:null,t1:null,eta:null,stage:12,st:'wait',tp:Date.now(),u:Date.now(),kb:{k:'ver',v:VER,by:S.name}}]})}catch(e){}
+}
+function verCheck(rows){
+  if(!live())return;
+  let sv='';rows.forEach(x=>{if(x.kb&&x.kb.k==='ver'&&String(x.kb.v)>sv)sv=String(x.kb.v)});
+  if(!sv||VER>sv){verHide();verPush();return}   /* この端末のほうが新しい（またはまだ誰も書いていない）→ 知らせる */
+  if(sv>VER)verShow(sv);else verHide();
+}
+const verSafe=()=>!modalOpen&&!Object.keys(outbox()).length&&!plan.some(p=>String(p.hin||'').trim()||String(p.box||'').trim())&&!String((document.getElementById('shipIn')||{}).value||'').trim();
+function verShow(sv){
+  verSv=sv;$('#verBar').style.display='flex';
+  $('#verTx').textContent='新しい版（ver '+sv+'）があります（いまは ver '+VER+'）';
+  if(!verTimer){verAt=Date.now()+10000;verTimer=setInterval(verTick,1000)}
+  verTick();
+}
+function verHide(){const b=$('#verBar');if(b)b.style.display='none';if(verTimer){clearInterval(verTimer);verTimer=null}if(load('verTry',{}).v)save('verTry',{v:'',n:0,at:0})}
+function verTick(){
+  const tr=load('verTry',{v:'',n:0,at:0}),sub=$('#verSub');
+  if(tr.v===verSv&&tr.n>=5){sub.textContent='何度更新しても、古い版のままです。ファイルを新しい版に入れかえるか、Apps Scriptのデプロイを確かめてください';return}
+  if(tr.v===verSv&&Date.now()-tr.at<60000){sub.textContent='更新しましたが、まだ古い版です。ファイルの同期を待っています（1分ごとに、自動でやりなおします）';return}
+  if(!verSafe()){verAt=Date.now()+10000;sub.textContent='入力が終わると、自動で更新します';return}
+  const left=Math.ceil((verAt-Date.now())/1000);
+  if(left<=0){verGo();return}
+  sub.textContent='あと '+left+' 秒で、自動で更新します（入力中は、更新しません）';
+}
+function verGo(){
+  const tr=load('verTry',{v:'',n:0,at:0});
+  save('verTry',{v:verSv,n:tr.v===verSv?tr.n+1:1,at:Date.now()});
+  if(verTimer){clearInterval(verTimer);verTimer=null}
+  try{if(onGas&&/^https:/.test(S.gasUrl||'')){window.open(S.gasUrl,'_top');return}}catch(e){}
+  location.reload();
+}
+$('#verGo').onclick=verGo;
 let andonLog=[];
 async function listByDate(date){
   const mine=()=>Object.values(jobs).filter(j=>j.t1&&stg(j)>=2&&stg(j)<9&&ymd(j.t1)===date);
