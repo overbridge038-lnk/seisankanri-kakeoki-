@@ -316,7 +316,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
     <button class="ibtn andon" id="btnAndon">呼び出し</button>
     <button class="ibtn" id="btnFull">全画面</button>
     <button class="ibtn" id="btnSet">設定</button>
-    <span class="ver">ver 2026-11-16h</span>
+    <span class="ver">ver 2026-11-17a</span>
   </header>
   <main id="main">
     <section class="pane" id="paneDan1">
@@ -357,7 +357,7 @@ body.drag-on{user-select:none;-webkit-user-select:none}
 <script>
 'use strict';
 /* ====== 基本 ====== */
-const VER='2026-11-16h';
+const VER='2026-11-17a';
 const XMLH='<'+'?xml version="1.0" encoding="UTF-8" standalone="yes"?'+'>';   /* Googleの画面（HtmlService）が「<と?を続けた並び」を特別に扱うため、文字をつなげて書く */
 /* Googleのウェブアプリから開いたとき（Code.gs の画面）は google.script.run でデータ置き場とやりとりする（URLの入力は不要） */
 const onGas=typeof google==='object'&&!!(google.script&&google.script.run);
@@ -511,14 +511,69 @@ async function flush(){
 async function poll(){
   if(!live())return;
   try{
-    const j=await gas('GET',{action:'list'});const ob=outbox();let ch=false;
-    for(const x of j.jobs){if(ob[x.id])continue;const c=jobs[x.id];if(!c||x.u>c.u){jobs[x.id]=x;jshadow[x.id]=JSON.stringify(x);ch=true}}
+    const j=await gas('GET',{action:'list'});const ob=outbox();let ch=false;const shr=[];
+    for(const x of j.jobs){if(stg(x)===12){shr.push(x);continue}if(ob[x.id])continue;const c=jobs[x.id];if(!c||x.u>c.u){jobs[x.id]=x;jshadow[x.id]=JSON.stringify(x);ch=true}}
     if(ch){saveJobs();renderAll()}setNet(true);
+    shApply(shr).catch(()=>{});
   }catch(e){setNet(false)}
 }
 async function fetchMaster(){
+  try{const r=await gas('GET',{action:'list'});await shApply(r.jobs.filter(x=>stg(x)===12))}catch(e){}
+  if(load('shV_master',0))return true;   /* 共有データがあるときは、そちらを使う */
   try{const j=await gas('GET',{action:'master'});if(j.master&&j.master.length){master=normM(j.master);save('master',master);save('masterV',Date.now());d1Built=false;return true}}catch(e){}
   return false;
+}
+/* ===== 取り込んだExcelのデータを、全端末で共有する =====
+   品番マスタと、進捗管理（標準時間をふくむ）は、取り込んだ端末の中にしか入らないので、Googleのデータ置き場にも、stage 12 の記録として保存する。
+   id=SH-<種類>#<番号>、kb={k:種類,v:取り込んだ時刻,n:番号,N:全部の数,d:データ（gzip→base64を分けたもの）}
+   画面の job には入れない（実績・元に戻す・削除の対象外）。新しいほうが勝つ：サーバーのほうが新しければ取り込み、この端末のほうが新しければ送る */
+const SH_CHUNK=30000,shBusy={};
+const shVal={master:()=>master,limit:()=>limit},shVkey={master:'masterV',limit:'limitV'},shName={master:'品番マスタ',limit:'進捗管理と標準時間'};
+async function shPack(obj){
+  const txt=JSON.stringify(obj);
+  try{if(typeof CompressionStream==='function'){const u8=new Uint8Array(await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());let b='';for(let i=0;i<u8.length;i+=8192)b+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return 'g:'+btoa(b)}}catch(e){}
+  return 'j:'+txt;
+}
+async function shUnpack(str){
+  if(str.slice(0,2)==='g:'){const bin=atob(str.slice(2)),u8=Uint8Array.from(bin,c=>c.charCodeAt(0));return JSON.parse(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).text())}
+  return JSON.parse(str.slice(2));
+}
+async function shPush(kind){
+  if(!live())return false;
+  const data=shVal[kind](),v=load(shVkey[kind],0);if(!data||!v)return false;
+  try{
+    const str=await shPack(data),N=Math.max(1,Math.ceil(str.length/SH_CHUNK)),docs=[];
+    for(let n=0;n<N;n++)docs.push({id:'SH-'+kind+'#'+n,tab:S.name,hin:'共有データ（'+shName[kind]+'）',sei:'',maker:'',qty:null,n:0,nq:0,ins:0,t0:null,t1:null,eta:null,stage:12,st:'wait',tp:v,u:Date.now(),kb:{k:kind,v,n,N,d:str.slice(n*SH_CHUNK,(n+1)*SH_CHUNK)}});
+    await gas('POST',null,{action:'upsert',jobs:docs});
+    save('shV_'+kind,v);return true;
+  }catch(e){return false}
+}
+async function shApply(rows){
+  if(!live())return;
+  let changed=false;
+  for(const kind of ['master','limit']){
+    if(shBusy[kind])continue;shBusy[kind]=true;
+    try{
+      const mine=rows.filter(x=>x.kb&&x.kb.k===kind);let v=0;mine.forEach(x=>{if(+x.kb.v>v)v=+x.kb.v});
+      const lv=load(shVkey[kind],0);
+      if(v>lv){   /* サーバーのほうが新しい → この端末に取り込む */
+        const ch=mine.filter(x=>+x.kb.v===v).sort((a,b)=>a.kb.n-b.kb.n),N=ch[0]&&ch[0].kb.N;
+        if(N&&ch.length===N&&ch.every((x,i)=>x.kb.n===i)){
+          const data=await shUnpack(ch.map(x=>x.kb.d).join(''));
+          if(kind==='master'&&Array.isArray(data)&&data.length){master=normM(data);save('master',master);d1Built=false;pickCust=null;save(shVkey[kind],v);save('shV_'+kind,v);changed=true}
+          else if(kind==='limit'&&data&&Array.isArray(data.times)&&Array.isArray(data.areas)){limit=data;save('limit',limit);save(shVkey[kind],v);save('shV_'+kind,v);changed=true}
+          if(changed)toast('ほかの端末で取り込んだ「'+shName[kind]+'」に、更新しました');
+        }
+      }else if(lv>v&&load(kind,null)){await shPush(kind)}   /* この端末のほうが新しい（またはサーバーにない）→ 送る */
+    }catch(e){}
+    shBusy[kind]=false;
+  }
+  if(changed)renderAll();
+}
+async function shShare(m,l){   /* 取り込んだあとに、全端末へ共有する。画面に出す文を返す */
+  if(!live())return '';
+  const r=[];if(m)r.push(await shPush('master'));if(l)r.push(await shPush('limit'));
+  return r.every(Boolean)?'\n\n全部のタブレットに共有しました（ほかの端末には、数秒で反映されます）':'\n\n※ 全部のタブレットへの共有ができませんでした。通信がもどると、自動でやりなおします';
 }
 let andonLog=[];
 async function listByDate(date){
@@ -1840,15 +1895,15 @@ function openSettings(){
           const L=limitFromHtml(await f.text());
           if(!L){alert('このHTMLには、進捗管理（タイムリミット表）のデータが入っていません。\n品番マスタは、Excel（.xlsx）か CSV で入れてください');return}
           L.qtyLabel=(limit&&limit.qtyLabel)||'必要数';L.std=(limit&&limit.std)||{};limit=L;save('limit',limit);save('limitV',Date.now());
-          alert('進捗管理（タイムリミット表） '+limitCount(L)+' 件を取り込みました（品番マスタはそのままです）');return}
+          alert('進捗管理（タイムリミット表） '+limitCount(L)+' 件を取り込みました（品番マスタはそのままです）'+await shShare(false,true));return}
         const rows=await readTable(f);const m0=masterFromRows(rows),m=m0.filter(x=>!mJunk(x));
         if(m0.length-m.length>=3){alert('品番マスタとして読めない形のファイルです（中身がプログラムの文字になっています）。\n品番マスタは、管理シートのExcel（.xlsx）か CSV で入れてください');return}
-        let L=null;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr);if(!L)L=limitFromKanri(rows)}   /* 「リミット表」シートがなければ、管理シートの「生産リミット時間」の列から */
+        let L=null,stdOnly=false;if(/\.xlsx$/i.test(f.name)){const lr=await readXlsx(await f.arrayBuffer(),/^リミット表/);if(lr)L=limitFromRows(lr);if(!L)L=limitFromKanri(rows)}   /* 「リミット表」シートがなければ、管理シートの「生産リミット時間」の列から */
         if(L){L.qtyLabel=qtyLabelFrom(await readXlsx(await f.arrayBuffer(),/^掛け置き管理表データ/))||'必要数';L.std=stdFromRows(rows)||{};limit=L;save('limit',limit);save('limitV',Date.now())}
-        else if(limit&&/\.xlsx$/i.test(f.name)){const sd=stdFromRows(rows);if(sd&&Object.keys(sd).length){limit.std=sd;save('limit',limit)}}   /* リミットの時刻がなくても、標準時間は入れ直す */
+        else if(limit&&/\.xlsx$/i.test(f.name)){const sd=stdFromRows(rows);if(sd&&Object.keys(sd).length){limit.std=sd;save('limit',limit);save('limitV',Date.now());stdOnly=true}}   /* リミットの時刻がなくても、標準時間は入れ直す */
         const noQ=L&&L.kanri?L.areas[0].cols.flat().filter(i=>i.qty==='').length:0;
         const lmsg=L?'\n進捗管理（タイムリミット表） '+limitCount(L)+' 件も取り込みました'+(noQ?'\n\n※ '+noQ+' 件は、今月の必要数が読めませんでした（必要数・必要時間は空欄になります）。\nExcelで開いて「上書き保存」したファイルか、今月（'+(new Date().getMonth()+1)+'月）の列があるかを確かめてください':''):'';
-        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg)}else if(L)alert(lmsg.trim());else alert('品番マスタとして読める表がありません。\n管理シート入りのExcelか、ひな形（A 客先・B 名称・C 品番・背番、1行目は見出し）を入れてください')}
+        if(m.length){master=m;save('master',master);save('masterV',Date.now());d1Built=false;pickCust=null;alert('品番マスタ '+m.length+' 件取り込みました'+lmsg+await shShare(true,!!L||stdOnly))}else if(L)alert(lmsg.trim()+await shShare(false,true));else alert('品番マスタとして読める表がありません。\n管理シート入りのExcelか、ひな形（A 客先・B 名称・C 品番・背番、1行目は見出し）を入れてください')}
       catch(x){alert('読み込めませんでした：'+x.message)}};
     $('#sCsv').onchange=e=>{importMaster(e.target.files[0]);e.target.value=''};
     const dz=$('#sDrop');dz.onclick=()=>$('#sCsv').click();
